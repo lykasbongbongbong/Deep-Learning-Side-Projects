@@ -31,12 +31,12 @@ class Net:
     def __init__(self):
         self.lr = 0.008
         self.hidden_layer_neurons = [20, 7, 1]
-        self.epochs = 1
+        self.epochs = 10000
         self.W = [None, np.random.randn(2, 20), np.random.randn(20, 7), np.random.randn(7, 1)]
         self.b = [None, np.random.randn(20, 1), np.random.randn(7, 1), np.random.randn(1, 1)]
         self.Z = [None, np.random.randn(20, 1), np.random.randn(7, 1), np.random.randn(1, 1)]
         self.a = [None, np.random.randn(20, 1), np.random.randn(7, 1), np.random.randn(1, 1)]
-        a = 3
+    
     
     def sigmoid(self, x):
             #這邊不能用import math的math.exp 因為他是array math指支援size-1 arrays 
@@ -53,13 +53,14 @@ class Net:
         self.a[2] = self.sigmoid(self.Z[2])
 
         #3rd output layer
-        self.Z[3] = np.matmul(self.W[3].T, self.a[2]) + self.b[3]
+        self.Z[3] = np.matmul(self.W[3].T, self.a[2]) + self.b[2]
         self.a[3] = self.sigmoid(self.Z[3])
 
-
+    
     def calculate_loss(self):
-
-        
+        #cross entropy
+        print("aaaaa")
+        print(self.a[3])
         
 
 def generate_linear(n=100):
