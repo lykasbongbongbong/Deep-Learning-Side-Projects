@@ -91,32 +91,35 @@ class Net:
         # self.gradW[1] = np.matmul(self.gradZ[1], self.a[0].T)*(1/batch_size)
         # self.gradb[1] = np.sum(self.gradZ[1], axis=1, keepdims=True)*(1/batch_size)
 
+        '''
         #work(for reference)
-        # batch_size=gt_y.shape[1]
-        # grad_a3=-(gt_y/(pred_y+self.eps)-(1-gt_y)/(1-pred_y+self.eps))
-        # grad_z3=grad_a3*der_sigmoid(self.a[3])
-        # grad_W3=grad_z3@self.a[2].T*(1/batch_size)
-        # grad_b3=np.sum(grad_z3,axis=1,keepdims=True)*(1/batch_size)
-    
-        # grad_a2=self.W[3].T@grad_z3
-        # grad_z2=grad_a2*der_sigmoid(self.a[2])
-        # grad_W2=grad_z2@self.a[1].T*(1/batch_size)
-        # grad_b2=np.sum(grad_z2,axis=1,keepdims=True)*(1/batch_size)
-            
-        # grad_a1=self.W[2].T@grad_z2
-        # grad_z1=grad_a1*der_sigmoid(self.a[1])
-        # grad_W1=grad_z1@self.a[0].T*(1/batch_size)
-        # grad_b1=np.sum(grad_z1,axis=1,keepdims=True)*(1/batch_size)
-
-        # # update
-        # self.W[1]-=self.lr*grad_W1
-        # self.W[2]-=self.lr*grad_W2
-        # self.W[3]-=self.lr*grad_W3
-        # self.b[1]-=self.lr*grad_b1
-        # self.b[2]-=self.lr*grad_b2
-        # self.b[3]-=self.lr*grad_b3
+        batch_size=gt_y.shape[1]
         
-        # return
+        grad_a3=-(gt_y/(pred_y+self.eps)-(1-gt_y)/(1-pred_y+self.eps))
+        grad_z3=grad_a3*der_sigmoid(self.a[3])
+        grad_W3=grad_z3@self.a[2].T*(1/batch_size)
+        grad_b3=np.sum(grad_z3,axis=1,keepdims=True)*(1/batch_size)
+    
+        grad_a2=self.W[3].T@grad_z3
+        grad_z2=grad_a2*der_sigmoid(self.a[2])
+        grad_W2=grad_z2@self.a[1].T*(1/batch_size)
+        grad_b2=np.sum(grad_z2,axis=1,keepdims=True)*(1/batch_size)
+            
+        grad_a1=self.W[2].T@grad_z2
+        grad_z1=grad_a1*der_sigmoid(self.a[1])
+        grad_W1=grad_z1@self.a[0].T*(1/batch_size)
+        grad_b1=np.sum(grad_z1,axis=1,keepdims=True)*(1/batch_size)
+
+        # update
+        self.W[1]-=self.lr*grad_W1
+        self.W[2]-=self.lr*grad_W2
+        self.W[3]-=self.lr*grad_W3
+        self.b[1]-=self.lr*grad_b1
+        self.b[2]-=self.lr*grad_b2
+        self.b[3]-=self.lr*grad_b3
+        
+        return
+        '''
     def update_weight(self):
         
         for i in range(1,4):
