@@ -28,17 +28,11 @@ test:
 import numpy as np
 import matplotlib.pyplot as plt
 def der_sigmoid(y):
-    """ First derivative of Sigmoid function.
-    The input to this function should be the value that output from sigmoid function.
-    """
     return y * (1 - y)
-
-def der_sigmoid(y):
-    """ First derivative of Sigmoid function.
-    The input to this function should be the value that output from sigmoid function.
-    """
-    return y * (1 - y)
-
+def der_relu(y):
+    y[y<=0] = 0
+    y[y>0] = 1
+    return y
 class Net:
     def __init__(self):
         self.lr = 1.2
@@ -62,17 +56,20 @@ class Net:
         self.a[0] = x
         #1st hidden layer
         self.Z[1] = np.matmul(self.W[1], self.a[0]) + self.b[1]
-        self.a[1] = self.sigmoid(self.Z[1])
+        #relu
+        self.a[1] = np.maximum(0, self.Z[1])
+        # self.a[1] = self.sigmoid(self.Z[1])
 
         #2nd hidden layer
         self.Z[2] = np.matmul(self.W[2], self.a[1]) + self.b[2]
-        self.a[2] = self.sigmoid(self.Z[2])
+        self.a[2] = np.maximum(0, self.Z[2])
+        # self.a[2] = self.sigmoid(self.Z[2])
 
         #3rd output layer
         self.Z[3] = np.matmul(self.W[3], self.a[2]) + self.b[3]
         self.a[3] = self.sigmoid(self.Z[3]) 
         return self.a[3]
-
+   
     def calculate_loss(self, y, y_pred):
         #cross entropy: 要算第k筆data分別是0, 1的機率 -y01(log(p(0,1))) + -y11(log(p(1,1)))
         n = y.shape[1]
@@ -84,22 +81,28 @@ class Net:
         # 
         
         batch_size=y.shape[1]
-        
-        self.grada[3] = -(np.divide(y, pred_y+self.eps) - np.divide(1-y, 1-pred_y+self.eps))
-        
+        # for i in reversed(range(1,4)):
+        #     if i == 3:
+        #         self.grada[i] = -(np.divide(y, pred_y+self.eps) - np.divide(1-y, 1-pred_y+self.eps))   
+        #     else:  
+        #         self.grada[i] = np.matmul(self.W[i+1].T, self.gradZ[i+1])
+        #     self.gradZ[i] = np.multiply(self.grada[i], der_sigmoid(self.a[i])) 
+        #     self.gradW[i] = np.matmul(self.gradZ[i], self.a[i-1].T)*(1/batch_size)
+        #     self.gradb[i] = np.sum(self.gradZ[i], axis=1, keepdims=True)*(1/batch_size)
 
-        ##self.grada[3]=-(y/(pred_y+self.eps)-(1-y)/(1-pred_y+self.eps))
+
+        self.grada[3] = -(np.divide(y, pred_y+self.eps) - np.divide(1-y, 1-pred_y+self.eps))
         self.gradZ[3] = np.multiply(self.grada[3], der_sigmoid(self.a[3])) 
         self.gradW[3] = np.matmul(self.gradZ[3], self.a[2].T)*(1/batch_size)
         self.gradb[3] = np.sum(self.gradZ[3], axis=1, keepdims=True)*(1/batch_size)
 
         self.grada[2] = np.matmul(self.W[3].T, self.gradZ[3])
-        self.gradZ[2] = np.multiply(self.grada[2], der_sigmoid(self.a[2])) 
+        self.gradZ[2] = np.multiply(self.grada[2], der_relu(self.a[2])) 
         self.gradW[2] = np.matmul(self.gradZ[2], self.a[1].T)*(1/batch_size)
         self.gradb[2] = np.sum(self.gradZ[2], axis=1, keepdims=True)*(1/batch_size)
 
         self.grada[1] = np.matmul(self.W[2].T,self.gradZ[2])
-        self.gradZ[1] = np.multiply(self.grada[1], der_sigmoid(self.a[1])) 
+        self.gradZ[1] = np.multiply(self.grada[1], der_relu(self.a[1])) 
         self.gradW[1] = np.matmul(self.gradZ[1], self.a[0].T)*(1/batch_size)
         self.gradb[1] = np.sum(self.gradZ[1], axis=1, keepdims=True)*(1/batch_size)
         
