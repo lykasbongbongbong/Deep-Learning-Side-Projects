@@ -33,6 +33,12 @@ def der_sigmoid(y):
     """
     return y * (1 - y)
 
+def der_sigmoid(y):
+    """ First derivative of Sigmoid function.
+    The input to this function should be the value that output from sigmoid function.
+    """
+    return y * (1 - y)
+
 class Net:
     def __init__(self):
         self.lr = 1.2
