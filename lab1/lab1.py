@@ -27,12 +27,8 @@ test:
 '''
 import numpy as np
 import matplotlib.pyplot as plt
-def der_sigmoid(y):
-    return y * (1 - y)
-def der_relu(y):
-    y[y<=0] = 0
-    y[y>0] = 1
-    return y
+
+
 class Net:
     def __init__(self):
         self.lr = 1.2
@@ -51,25 +47,25 @@ class Net:
     def sigmoid(self, x):
             #這邊不能用import math的math.exp 因為他是array math指支援size-1 arrays 
         return 1/(1+np.exp(-x))
+    
+    def derivative_sigmoid(self, x):
+        return np.multiply(x, 1.0-x)
 
     def forward(self, x, y):
         self.a[0] = x
         #1st hidden layer
         self.Z[1] = np.matmul(self.W[1], self.a[0]) + self.b[1]
-        #relu
-        self.a[1] = np.maximum(0, self.Z[1])
-        # self.a[1] = self.sigmoid(self.Z[1])
+        self.a[1] = self.sigmoid(self.Z[1])
 
         #2nd hidden layer
         self.Z[2] = np.matmul(self.W[2], self.a[1]) + self.b[2]
-        self.a[2] = np.maximum(0, self.Z[2])
-        # self.a[2] = self.sigmoid(self.Z[2])
+        self.a[2] = self.sigmoid(self.Z[2])
 
         #3rd output layer
         self.Z[3] = np.matmul(self.W[3], self.a[2]) + self.b[3]
         self.a[3] = self.sigmoid(self.Z[3]) 
         return self.a[3]
-   
+
     def calculate_loss(self, y, y_pred):
         #cross entropy: 要算第k筆data分別是0, 1的機率 -y01(log(p(0,1))) + -y11(log(p(1,1)))
         n = y.shape[1]
@@ -81,28 +77,19 @@ class Net:
         # 
         
         batch_size=y.shape[1]
-        # for i in reversed(range(1,4)):
-        #     if i == 3:
-        #         self.grada[i] = -(np.divide(y, pred_y+self.eps) - np.divide(1-y, 1-pred_y+self.eps))   
-        #     else:  
-        #         self.grada[i] = np.matmul(self.W[i+1].T, self.gradZ[i+1])
-        #     self.gradZ[i] = np.multiply(self.grada[i], der_sigmoid(self.a[i])) 
-        #     self.gradW[i] = np.matmul(self.gradZ[i], self.a[i-1].T)*(1/batch_size)
-        #     self.gradb[i] = np.sum(self.gradZ[i], axis=1, keepdims=True)*(1/batch_size)
-
-
+        
         self.grada[3] = -(np.divide(y, pred_y+self.eps) - np.divide(1-y, 1-pred_y+self.eps))
-        self.gradZ[3] = np.multiply(self.grada[3], der_sigmoid(self.a[3])) 
+        self.gradZ[3] = np.multiply(self.grada[3], self.derivative_sigmoid(self.a[3])) 
         self.gradW[3] = np.matmul(self.gradZ[3], self.a[2].T)*(1/batch_size)
         self.gradb[3] = np.sum(self.gradZ[3], axis=1, keepdims=True)*(1/batch_size)
 
         self.grada[2] = np.matmul(self.W[3].T, self.gradZ[3])
-        self.gradZ[2] = np.multiply(self.grada[2], der_relu(self.a[2])) 
+        self.gradZ[2] = np.multiply(self.grada[2], self.derivative_sigmoid(self.a[2])) 
         self.gradW[2] = np.matmul(self.gradZ[2], self.a[1].T)*(1/batch_size)
         self.gradb[2] = np.sum(self.gradZ[2], axis=1, keepdims=True)*(1/batch_size)
 
         self.grada[1] = np.matmul(self.W[2].T,self.gradZ[2])
-        self.gradZ[1] = np.multiply(self.grada[1], der_relu(self.a[1])) 
+        self.gradZ[1] = np.multiply(self.grada[1], self.derivative_sigmoid(self.a[1])) 
         self.gradW[1] = np.matmul(self.gradZ[1], self.a[0].T)*(1/batch_size)
         self.gradb[1] = np.sum(self.gradZ[1], axis=1, keepdims=True)*(1/batch_size)
         
@@ -110,10 +97,7 @@ class Net:
 
         
     def update_weight(self):
-        
         for i in range(1,4):
-            # print(i)
-            # print(self.gradW[i].shape)
             self.W[i] -= self.lr * self.gradW[i]
             self.b[i] -= self.lr * self.gradb[i]
         return
@@ -131,6 +115,17 @@ def generate_linear(n=100):
             labels.append(1)
     return np.array(inputs), np.array(labels).reshape(n,1)
 
+def generate_XOR_easy():
+    inputs = []
+    labels = []
+    for i in range(11):
+        inputs.append([0.1*i, 0.1*i])
+        labels.append(0)
+        if 0.1*i == 0.5:
+            continue
+        inputs.append([0.1*i, 1-0.1*i])
+        labels.append(1)
+    return np.array(inputs), np.array(labels).reshape(21,1)
 
 def show_result(x, y, pred_y):
     plt.subplot(1,2,1)
@@ -151,27 +146,82 @@ def show_result(x, y, pred_y):
     plt.show()
     return 
 
+def show_learning_curve(error):
+    plt.plot(np.sqrt(error), "r-+", linewidth=0.3, label="train")
+    plt.legend(loc="upper right", fontsize=14)
+    plt.xlabel("Training set size", fontsize=14)
+    plt.ylabel("RMSE", fontsize=14)
+    plt.show()
+    return 
 
 def main():
-    #get data and parse them into training and testing set
+    #Linear:
     x, y = generate_linear()
     x_train, y_train, x_test, y_test = np.array(x[:50].T), np.array(y[:50].T), np.array(x[50:].T), np.array(y[50:].T)
-   
     model = Net()
-    
-    #train
-    
+    #linear train
+    linear_train_error = []
+    test_error = [] 
+    print("\n---Linear Training Result---")
     for i in range(model.epochs):
         y_pred = model.forward(x_train, y_train)
         loss = model.calculate_loss(y_train, y_pred)
+        linear_train_error.append(loss)
         model.backward(y_train, y_pred)
         model.update_weight()
 
         if i % 1000 == 0:
             acc=(1.-np.sum(np.abs(y_train-np.round(y_pred)))/y_train.shape[1])*100
             print(f"Epochs {i}: loss={loss} accuracy={acc}%")
-    # print(x_train[1].shape)
     show_result(x_train, y_train[0], np.round(y_pred[0]))
+    show_learning_curve(linear_train_error)
+    
+    #linear testing
+    print("\n---Linear Testing Result---")
+    linear_test_error = []
+    y_test_pred = model.forward(x_test, y_test)
+    linear_test_loss = model.calculate_loss(y_test, y_test_pred)
+    linear_test_error.append(linear_test_loss)
+    acc=(1.-np.sum(np.abs(y_test-np.round(y_test_pred)))/y_test.shape[1])*100
+    print(f"loss={linear_test_loss} accuracy={acc}")
+    show_result(x_test, y_test[0], np.round(y_test_pred[0]))
+    
+
+
+    
+
+
+    #XOR
+    x,y = generate_XOR_easy()
+    x, y= x.T, y.T
+    model = Net()
+    
+    #train
+    print("\n---XOR Training Results---")
+    xor_train_error = []
+    for i in range(model.epochs):
+        y_pred = model.forward(x, y)
+        loss = model.calculate_loss(y, y_pred)
+        xor_train_error.append(loss)
+        model.backward(y, y_pred)
+        model.update_weight()
+
+        if i % 1000 == 0:
+            acc=(1.-np.sum(np.abs(y-np.round(y_pred)))/y.shape[0])*100
+            print(f"Epochs {i}: loss={loss} accuracy={acc}%")
+    show_result(x, y[0], np.round(y_pred[0]))
+    show_learning_curve(xor_train_error)
+
+    xor_x_test, xor_y_test = generate_XOR_easy()
+    xor_x_test, xor_y_test = xor_x_test.T, xor_y_test.T
+    xor_test_error = []
+    xor_y_test_pred = model.forward(xor_x_test, xor_y_test)
+    xor_test_error.append(model.calculate_loss(xor_y_test, xor_y_test_pred))
+    acc=(1.-np.sum(np.abs(xor_y_test_pred-np.round(xor_y_test_pred)))/xor_y_test.shape[0])*100
+    print(f"\n---XOR Testing Results---\nloss={xor_test_error} accuracy={acc}%")
+    show_result(xor_x_test, xor_y_test[0], np.round(xor_y_test_pred[0]))
+    
+
 
 if __name__ == '__main__':
     main()
