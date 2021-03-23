@@ -4,9 +4,12 @@ import matplotlib.pyplot as plt
 
 class Net:
     def __init__(self):
+        self.linear = False
+        self.XOR = False
+
         self.lr = 0.8
         self.hln = [3, 3, 1]
-        self.epochs = 1000
+        self.epochs = 10000
         self.eps = 1e-8
         self.steplr_step = 500
         self.output_loss_interval = 100
@@ -88,20 +91,32 @@ class Net:
         
         #momentum:
         beta = 0.9
-        for i in range(1,4):
-
-            #add: momentum
-            # self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
-            # self.W[i] = self.W[i] + self.vt[i]
-            # self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
-            # self.b[i] = self.b[i] + self.vt2[i]
-
-            #add: adagrad
-            n = np.sum(self.gradW[i]*self.gradW[i])
-            self.W[i] = self.W[i] - self.lr * (1/np.sqrt(n+self.eps))*self.gradW[i]
-            n2 = np.sum(self.gradb[i]*self.gradb[i])
-            self.b[i] = self.b[i] - self.lr * (1/np.sqrt(n2+self.eps))*self.gradb[i]
+        if self.linear == True:
+            for i in range(1,4):
+                #momentum
+                self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
+                self.W[i] = self.W[i] + self.vt[i]
+                self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
+                self.b[i] = self.b[i] + self.vt2[i]            
+        elif self.XOR == True:
+            for i in range(1,4):
+                #adagrad
+                n = np.sum(self.gradW[i]*self.gradW[i])
+                self.W[i] = self.W[i] - self.lr * (1/np.sqrt(n+self.eps))*self.gradW[i]
+                n2 = np.sum(self.gradb[i]*self.gradb[i])
+                self.b[i] = self.b[i] - self.lr * (1/np.sqrt(n2+self.eps))*self.gradb[i]
                      
+        # for i in range(1,4):
+        #     #momentum
+        #     # self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
+        #     # self.W[i] = self.W[i] + self.vt[i]
+        #     # self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
+        #     # self.b[i] = self.b[i] + self.vt2[i]           
+        #     n = np.sum(self.gradW[i]*self.gradW[i])
+        #     self.W[i] = self.W[i] - self.lr * (1/np.sqrt(n+self.eps))*self.gradW[i]
+        #     n2 = np.sum(self.gradb[i]*self.gradb[i])
+        #     self.b[i] = self.b[i] - self.lr * (1/np.sqrt(n2+self.eps))*self.gradb[i]
+            
 
             #original(without optimizer):
             # self.W[i] -= self.lr * self.gradW[i] 
@@ -165,17 +180,23 @@ def show_learning_curve(error):
 def main():
 
     linear_threshold = 0.015
-    xor_threashold = 0.005
+    xor_threashold = 0.001
+    early_stopping_count = 0
+    linear_train_error = []
+    xor_train_error = []
+    
+    
+    
     #Linear:
+    
     x, y = generate_linear()
     x = x.T
     y = y.T
    
     model = Net()
-    #linear train
-    linear_train_error = []
-    test_error = [] 
-    early_stopping_count = 0
+    model.linear = True
+    model.XOR = False
+    
     print("\n---Linear Training Result---")
     for i in range(model.epochs):            
         y_pred = model.forward(x, y)
@@ -191,7 +212,7 @@ def main():
         if abs(loss) <= linear_threshold:
             early_stopping_count += 1
             if early_stopping_count == 3:
-                print(f"\n\n---Early Stopping at epoch: {i}---\n\n")
+                print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss}---\n\n")
                 early_stopping_count = 0
                 break
 
@@ -210,10 +231,12 @@ def main():
     x,y = generate_XOR_easy()
     x, y= x.T, y.T
     model = Net()
+    model.linear = False
+    model.XOR = True
+    
     
     #train
     print("\n---XOR Training Results---")
-    xor_train_error = []
     for i in range(model.epochs):
         y_pred = model.forward(x, y)
         loss = model.calculate_loss(y, y_pred)
@@ -229,7 +252,7 @@ def main():
         if abs(loss) <= xor_threashold:
             early_stopping_count += 1
             if early_stopping_count == 3:
-                print(f"\n\n---Early Stopping at epoch: {i}---\n\n")
+                print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss}---\n\n")
                 break
     show_result(x, y[0], np.round(y_pred[0]))
     show_learning_curve(xor_train_error)
