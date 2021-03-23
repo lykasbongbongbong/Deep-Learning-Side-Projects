@@ -6,17 +6,17 @@ class Net:
     def __init__(self):
         self.lr = 0.8
         self.hln = [3, 3, 1]
-        self.epochs = 10000
+        self.epochs = 1000
         self.eps = 1e-3
-        self.steplr_step = 2500
-        self.output_loss_interval = 300
-        self.v1 = 0.
-        self.v2 = 0.
-        self.momentum = 0.1
-        self.change = 0.0
+        self.steplr_step = 500
+        self.output_loss_interval = 100
+        
        
-
-
+        #momentum param
+        self.vt = [None, np.zeros((self.hln[0], 2)), np.zeros((self.hln[1], self.hln[0])), np.zeros((1, self.hln[1]))]
+        self.vt2 = [None, np.zeros((self.hln[0], 1)), np.zeros((self.hln[1], 1)), np.zeros((1, 1))]
+        
+        
         self.W = [None, np.random.randn(self.hln[0], 2), np.random.randn(self.hln[1], self.hln[0]), np.random.randn(1, self.hln[1])]
         self.b = [None, np.random.randn(self.hln[0], 1), np.random.randn(self.hln[1], 1), np.random.randn(1, 1)]
         self.Z = [None, np.random.randn(self.hln[0], 1), np.random.randn(self.hln[1], 1), np.random.randn(1, 1)]
@@ -85,12 +85,23 @@ class Net:
         #Adaptive LR: set step size
         if epoch % self.steplr_step == 0:
             self.lr = self.lr * self.lr
-            
         
-        
+        #momentum:
+        beta = 0.9
         for i in range(1,4):
-            self.W[i] -= self.lr * self.gradW[i] 
-            self.b[i] -= self.lr * self.gradb[i]
+
+            #add: momentum
+            self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
+            self.W[i] = self.W[i] + self.vt[i]
+            self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
+            self.b[i] = self.b[i] + self.vt2[i]
+
+            #original(without optimizer):
+            # self.W[i] -= self.lr * self.gradW[i] 
+            # self.b[i] -= self.lr * self.gradb[i]
+
+            # self.W[i] -= self.lr * self.gradW[i] 
+            
 
             # new_change = step_size * self.gradW[i] + self.momentum * self.change
 
@@ -183,6 +194,7 @@ def main():
         if abs(loss) <= linear_threshold:
             early_stopping_count += 1
             if early_stopping_count == 3:
+                print(f"\n\n---Early Stopping at epoch: {i}---\n\n")
                 early_stopping_count = 0
                 break
 
@@ -220,6 +232,7 @@ def main():
         if abs(loss) <= xor_threashold:
             early_stopping_count += 1
             if early_stopping_count == 3:
+                print(f"\n\n---Early Stopping at epoch: {i}---\n\n")
                 break
     show_result(x, y[0], np.round(y_pred[0]))
     show_learning_curve(xor_train_error)
