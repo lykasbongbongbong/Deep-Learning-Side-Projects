@@ -7,7 +7,7 @@ class Net:
         self.lr = 0.8
         self.hln = [3, 3, 1]
         self.epochs = 1000
-        self.eps = 1e-3
+        self.eps = 1e-8
         self.steplr_step = 500
         self.output_loss_interval = 100
         
@@ -91,24 +91,21 @@ class Net:
         for i in range(1,4):
 
             #add: momentum
-            self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
-            self.W[i] = self.W[i] + self.vt[i]
-            self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
-            self.b[i] = self.b[i] + self.vt2[i]
+            # self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
+            # self.W[i] = self.W[i] + self.vt[i]
+            # self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
+            # self.b[i] = self.b[i] + self.vt2[i]
+
+            #add: adagrad
+            n = np.sum(self.gradW[i]*self.gradW[i])
+            self.W[i] = self.W[i] - self.lr * (1/np.sqrt(n+self.eps))*self.gradW[i]
+            n2 = np.sum(self.gradb[i]*self.gradb[i])
+            self.b[i] = self.b[i] - self.lr * (1/np.sqrt(n2+self.eps))*self.gradb[i]
+                     
 
             #original(without optimizer):
             # self.W[i] -= self.lr * self.gradW[i] 
             # self.b[i] -= self.lr * self.gradb[i]
-
-            # self.W[i] -= self.lr * self.gradW[i] 
-            
-
-            # new_change = step_size * self.gradW[i] + self.momentum * self.change
-
-            # self.v1 = -(self.gradW[i] * self.lr) + self.momentum * self.v1
-            # self.W[i] += self.W[i] + self.v1
-            # self.v2 = -self.gradb[i] * self.lr + self.momentum * self.v2
-            # self.b[i] += self.gradb[i] + self.v2
         return
     
 
