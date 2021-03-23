@@ -1,48 +1,21 @@
-'''
-class Net:
-    #initialization
-    W: [None, shape(2, 20), shape(20, 7), shape(1, 7)]
-    b: [None, (20,1), (7,1), (1,1)]
-    Z: [None, (20,1), (7,1), (1,1)]
-    a: [None, (20,1), (7,1), (1,1)]
-    learning_rate
-    hidden_layer_neuron
-    iterations
-    main: 
-        get data:
-            linear / XOR
-            divide them into training and testing set (50, 50)
-            reshape
-    #forward
-    #backward
-train: 
-    forward
-    loss 
-    backward
-    update_weight
-
-test:
-    forward
-    loss
-'''
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 class Net:
     def __init__(self):
-        self.lr = 1.2
+        self.lr = 0.8
         self.hln = [3, 3, 1]
         self.epochs = 10000
         self.eps = 1e-3
-        # self.W = [None, np.random.randn(20, 2), np.random.randn(7, 20), np.random.randn(1, 7)]
-        # self.b = [None, np.random.randn(20, 1), np.random.randn(7, 1), np.random.randn(1, 1)]
-        # self.Z = [None, np.random.randn(20, 1), np.random.randn(7, 1), np.random.randn(1, 1)]
-        # self.a = [None, np.random.randn(20, 1), np.random.randn(7, 1), np.random.randn(1, 1)]
-        # self.gradW = [None, np.random.randn(20, 2), np.random.randn(7, 20), np.random.randn(1, 7)]
-        # self.gradb = [None, np.random.randn(20, 1), np.random.randn(7, 1), np.random.randn(1, 1)]
-        # self.gradZ = [None, np.random.randn(20, 1), np.random.randn(7, 1), np.random.randn(1, 1)]
-        # self.grada = [None, np.random.randn(20, 1), np.random.randn(7, 1), np.random.randn(1, 1)]
+        self.steplr_step = 2500
+        self.output_loss_interval = 300
+        self.v1 = 0.
+        self.v2 = 0.
+        self.momentum = 0.1
+        self.change = 0.0
+       
+
 
         self.W = [None, np.random.randn(self.hln[0], 2), np.random.randn(self.hln[1], self.hln[0]), np.random.randn(1, self.hln[1])]
         self.b = [None, np.random.randn(self.hln[0], 1), np.random.randn(self.hln[1], 1), np.random.randn(1, 1)]
@@ -106,12 +79,28 @@ class Net:
         
         return 
 
+            
+    def update_weight(self, epoch):
+
+        #Adaptive LR: set step size
+        if epoch % self.steplr_step == 0:
+            self.lr = self.lr * self.lr
+            
         
-    def update_weight(self):
+        
         for i in range(1,4):
-            self.W[i] -= self.lr * self.gradW[i]
+            self.W[i] -= self.lr * self.gradW[i] 
             self.b[i] -= self.lr * self.gradb[i]
+
+            # new_change = step_size * self.gradW[i] + self.momentum * self.change
+
+            # self.v1 = -(self.gradW[i] * self.lr) + self.momentum * self.v1
+            # self.W[i] += self.W[i] + self.v1
+            # self.v2 = -self.gradb[i] * self.lr + self.momentum * self.v2
+            # self.b[i] += self.gradb[i] + self.v2
         return
+    
+
         
 
 def generate_linear(n=100):
@@ -146,8 +135,8 @@ def show_result(x, y, pred_y):
             plt.plot(x[0][i], x[1][i], 'ro')
         else:
             plt.plot(x[0][i], x[1][i], 'bo')
-    plt.show()
-    plt.subplot(1,2,1)
+   
+    plt.subplot(1,2,2)
     plt.title('Predict Result', fontsize=18)
     for i in range(x.shape[1]):
         if pred_y[i] == 0:
@@ -166,41 +155,46 @@ def show_learning_curve(error):
     return 
 
 def main():
-    output_loss_interval = 100
+
+    linear_threshold = 0.015
+    xor_threashold = 0.005
     #Linear:
     x, y = generate_linear()
-    x_train, y_train, x_test, y_test = np.array(x[:50].T), np.array(y[:50].T), np.array(x[50:].T), np.array(y[50:].T)
+    x = x.T
+    y = y.T
+   
     model = Net()
     #linear train
     linear_train_error = []
     test_error = [] 
+    early_stopping_count = 0
     print("\n---Linear Training Result---")
-    for i in range(model.epochs):
-        y_pred = model.forward(x_train, y_train)
-        loss = model.calculate_loss(y_train, y_pred)
+    for i in range(model.epochs):            
+        y_pred = model.forward(x, y)
+        loss = model.calculate_loss(y, y_pred)
         linear_train_error.append(loss)
-        model.backward(y_train, y_pred)
-        model.update_weight()
+        model.backward(y, y_pred)
+        model.update_weight(i)
 
-        if i % output_loss_interval == 0:
-            acc=(1.-np.sum(np.abs(y_train-np.round(y_pred)))/y_train.shape[1])*100
+        if i % model.output_loss_interval == 0:
+            acc=(1.-np.sum(np.abs(y-np.round(y_pred)))/y.shape[1])*100
             print(f"Epochs {i}: loss={loss} accuracy={acc}%")
-    show_result(x_train, y_train[0], np.round(y_pred[0]))
+        
+        if abs(loss) <= linear_threshold:
+            early_stopping_count += 1
+            if early_stopping_count == 3:
+                early_stopping_count = 0
+                break
+
+    show_result(x, y[0], np.round(y_pred[0]))
     show_learning_curve(linear_train_error)
-    
-    #linear testing
     print("\n---Linear Testing Result---")
-    linear_test_error = []
-    y_test_pred = model.forward(x_test, y_test)
-    linear_test_loss = model.calculate_loss(y_test, y_test_pred)
-    linear_test_error.append(linear_test_loss)
-    acc=(1.-np.sum(np.abs(y_test-np.round(y_test_pred)))/y_test.shape[1])*100
-    print(f"loss={linear_test_loss} accuracy={acc}")
-    show_result(x_test, y_test[0], np.round(y_test_pred[0]))
-    
+    y_pred_linear_test = model.forward(x,y)
+    y_pred_linear_loss = model.calculate_loss(y, y_pred_linear_test)
+    acc=(1.-np.sum(np.abs(y-np.round(y_pred_linear_test)))/y.shape[1])*100
+    print(f"loss={y_pred_linear_loss} accuracy={acc}%")
 
 
-    
 
 
     #XOR
@@ -216,22 +210,28 @@ def main():
         loss = model.calculate_loss(y, y_pred)
         xor_train_error.append(loss)
         model.backward(y, y_pred)
-        model.update_weight()
+        model.update_weight(i)
 
-        if i % output_loss_interval == 0:
+        if i % model.output_loss_interval == 0:
             acc=(1.-np.sum(np.abs(y-np.round(y_pred)))/y.shape[1])*100
             print(f"Epochs {i}: loss={loss} accuracy={acc}%")
+
+        #early stopping
+        if abs(loss) <= xor_threashold:
+            early_stopping_count += 1
+            if early_stopping_count == 3:
+                break
     show_result(x, y[0], np.round(y_pred[0]))
     show_learning_curve(xor_train_error)
 
-    xor_x_test, xor_y_test = generate_XOR_easy()
-    xor_x_test, xor_y_test = xor_x_test.T, xor_y_test.T
-    xor_test_error = []
-    xor_y_test_pred = model.forward(xor_x_test, xor_y_test)
-    xor_test_error.append(model.calculate_loss(xor_y_test, xor_y_test_pred))
-    acc=(1.-np.sum(np.abs(xor_y_test_pred-np.round(xor_y_test_pred)))/xor_y_test.shape[1])*100
-    print(f"\n---XOR Testing Results---\nloss={xor_test_error} accuracy={acc}%")
-    show_result(xor_x_test, xor_y_test[0], np.round(xor_y_test_pred[0]))
+    #test
+    print("\n---XOR Testing Results---")
+    y_xor_test_pred = model.forward(x,y)
+    xor_test_loss = model.calculate_loss(y, y_xor_test_pred)
+    acc=(1.-np.sum(np.abs(y-np.round(y_xor_test_pred)))/y.shape[1])*100
+    print(f"loss={xor_test_loss} accuracy={acc}%")
+
+    
     
 
 
