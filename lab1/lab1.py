@@ -88,9 +88,7 @@ class Net:
         return float(loss)
     
     def backward(self, y, pred_y):
-        #no work(need refinement)
-        # 
-        
+      
         batch_size=y.shape[1]
         #all sigmoid 
         self.grada[3] = -(np.divide(y, pred_y+self.eps) - np.divide(1-y, 1-pred_y+self.eps))
