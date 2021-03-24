@@ -134,7 +134,13 @@ class Net:
             
     def update_weight(self, epoch):
 
+<<<<<<< HEAD
         
+=======
+        # #Adaptive LR: set step size
+        # if epoch % self.steplr_step == 0:
+        #     self.lr = self.lr * self.lr
+>>>>>>> 84bf01351aac5776cade05a88c93c4a5e89aac38
         
         #momentum:
         beta = 0.9
@@ -159,11 +165,19 @@ class Net:
                 self.b[i] = self.b[i] - self.lr * (1/np.sqrt(n2+self.eps))*self.gradb[i]
                      
         # for i in range(1,4):
+<<<<<<< HEAD
         #     # #momentum
         #     # self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
         #     # self.W[i] = self.W[i] + self.vt[i]
         #     # self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
         #     # self.b[i] = self.b[i] + self.vt2[i]   
+=======
+        #     #momentum
+        #     self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
+        #     self.W[i] = self.W[i] + self.vt[i]
+        #     self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
+        #     self.b[i] = self.b[i] + self.vt2[i]   
+>>>>>>> 84bf01351aac5776cade05a88c93c4a5e89aac38
         #     #adagrad        
         #     n = np.sum(self.gradW[i]*self.gradW[i])
         #     self.W[i] = self.W[i] - self.lr * (1/np.sqrt(n+self.eps))*self.gradW[i]
@@ -277,7 +291,11 @@ def main():
         if abs(loss) <= linear_threshold:
             early_stopping_count += 1
             if early_stopping_count == 3:
+<<<<<<< HEAD
                 print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss} acc:{acc}%---\n\n")
+=======
+                print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss} acc:{acc}---\n\n")
+>>>>>>> 84bf01351aac5776cade05a88c93c4a5e89aac38
                 early_stopping_count = 0
                 break
 
@@ -324,7 +342,11 @@ def main():
         if abs(loss) <= xor_threashold:
             early_stopping_count += 1
             if early_stopping_count == 3:
+<<<<<<< HEAD
                 print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss} acc:{acc}%---\n\n")
+=======
+                print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss} acc:{acc}---\n\n")
+>>>>>>> 84bf01351aac5776cade05a88c93c4a5e89aac38
                 break
     show_result(x, y[0], np.round(y_pred[0]))
     show_learning_curve(xor_train_error)
