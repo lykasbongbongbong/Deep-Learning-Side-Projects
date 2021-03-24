@@ -11,7 +11,8 @@ class Net:
         self.hln = [3, 3, 1]
         self.epochs = 10000
         self.eps = 1e-8
-        self.steplr_step = 500
+        self.linear_steplr_step = 500
+        self.xor_steplr_step = 1000
         self.output_loss_interval = 100
         
        
@@ -30,13 +31,24 @@ class Net:
         self.grada = [None, np.random.randn(self.hln[0], 1), np.random.randn(self.hln[1], 1), np.random.randn(1, 1)]
     
     def sigmoid(self, x):
+        # print(1.0/(1.0+np.exp(-x)))
             #這邊不能用import math的math.exp 因為他是array math指支援size-1 arrays 
         return 1.0/(1.0+np.exp(-x))
+
+    def relu(self, x):
+        return np.maximum(0, x)
     
     def derivative_sigmoid(self, x):
         return np.multiply(x, 1.0-x)
 
+    def derivative_relu(self, x):
+        x[x<=0] = 0
+        x[x>0] = 1
+        return x
+
     def forward(self, x, y):
+
+        #sigmoid: 
         self.a[0] = x
         #1st hidden layer
         self.Z[1] = np.matmul(self.W[1], self.a[0]) + self.b[1]
@@ -51,6 +63,22 @@ class Net:
         self.a[3] = self.sigmoid(self.Z[3]) 
         return self.a[3]
 
+        '''
+        #relu:
+        self.a[0] = x
+        #1st hidden layer
+        self.Z[1] = np.matmul(self.W[1], self.a[0]) + self.b[1]
+        self.a[1] = np.maximum(0,self.Z[1])
+        #2nd hidden layer
+        self.Z[2] = np.matmul(self.W[2], self.a[1]) + self.b[2]
+        self.a[2] = np.maximum(0,self.Z[2])
+
+        #3rd output layer
+        self.Z[3] = np.matmul(self.W[3], self.a[2]) + self.b[3]
+        self.a[3] = self.sigmoid(self.Z[3])
+        return self.a[3]
+        '''
+
     def calculate_loss(self, y, y_pred):
         #cross entropy: 要算第k筆data分別是0, 1的機率 -y01(log(p(0,1))) + -y11(log(p(1,1)))
         n = y.shape[1]
@@ -64,7 +92,7 @@ class Net:
         # 
         
         batch_size=y.shape[1]
-        
+        #all sigmoid 
         self.grada[3] = -(np.divide(y, pred_y+self.eps) - np.divide(1-y, 1-pred_y+self.eps))
         self.gradZ[3] = np.multiply(self.grada[3], self.derivative_sigmoid(self.a[3])) 
         self.gradW[3] = np.matmul(self.gradZ[3], self.a[2].T)*(1/batch_size)
@@ -80,18 +108,40 @@ class Net:
         self.gradW[1] = np.matmul(self.gradZ[1], self.a[0].T)*(1/batch_size)
         self.gradb[1] = np.sum(self.gradZ[1], axis=1, keepdims=True)*(1/batch_size)
         
+
+        '''relu
+        self.grada[3] = -(np.divide(y, pred_y+self.eps) - np.divide(1-y, 1-pred_y+self.eps))
+        self.gradZ[3] = np.multiply(self.grada[3], self.derivative_sigmoid(self.a[3])) 
+        self.gradW[3] = np.matmul(self.gradZ[3], self.a[2].T)*(1/batch_size)
+        self.gradb[3] = np.sum(self.gradZ[3], axis=1, keepdims=True)*(1/batch_size)
+
+        self.grada[2] = np.matmul(self.W[3].T, self.gradZ[3])
+        self.gradZ[2][self.gradZ[2]<=0] = 0
+        self.gradZ[2] = self.grada[2] * self.gradZ[2]
+        self.gradW[2] = np.matmul(self.gradZ[2], self.a[1].T)*(1/batch_size)
+        self.gradb[2] = np.sum(self.gradZ[2], axis=1, keepdims=True)*(1/batch_size)
+
+        self.grada[1] = np.matmul(self.W[2].T,self.gradZ[2])
+        self.gradZ[1][self.gradZ[1]<=0] = 0
+        self.gradZ[1] = self.grada[1] * self.gradZ[1]
+        self.gradW[1] = np.matmul(self.gradZ[1], self.a[0].T)*(1/batch_size)
+        self.gradb[1] = np.sum(self.gradZ[1], axis=1, keepdims=True)*(1/batch_size)
+        '''
+
+
         return 
 
             
     def update_weight(self, epoch):
 
-        #Adaptive LR: set step size
-        if epoch % self.steplr_step == 0:
-            self.lr = self.lr * self.lr
+        
         
         #momentum:
         beta = 0.9
         if self.linear == True:
+            #Adaptive LR: set step size
+            if epoch % self.linear_steplr_step == 0:
+                self.lr = self.lr * self.lr
             for i in range(1,4):
                 #momentum
                 self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
@@ -99,6 +149,8 @@ class Net:
                 self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
                 self.b[i] = self.b[i] + self.vt2[i]            
         elif self.XOR == True:
+            if epoch % self.xor_steplr_step == 0:
+                self.lr = self.lr * self.lr
             for i in range(1,4):
                 #adagrad
                 n = np.sum(self.gradW[i]*self.gradW[i])
@@ -107,21 +159,22 @@ class Net:
                 self.b[i] = self.b[i] - self.lr * (1/np.sqrt(n2+self.eps))*self.gradb[i]
                      
         # for i in range(1,4):
-        #     #momentum
+        #     # #momentum
         #     # self.vt[i] = beta * self.vt[i] - self.lr*self.gradW[i] 
         #     # self.W[i] = self.W[i] + self.vt[i]
         #     # self.vt2[i] = beta * self.vt2[i] - self.lr * self.gradb[i]
-        #     # self.b[i] = self.b[i] + self.vt2[i]           
+        #     # self.b[i] = self.b[i] + self.vt2[i]   
+        #     #adagrad        
         #     n = np.sum(self.gradW[i]*self.gradW[i])
         #     self.W[i] = self.W[i] - self.lr * (1/np.sqrt(n+self.eps))*self.gradW[i]
         #     n2 = np.sum(self.gradb[i]*self.gradb[i])
         #     self.b[i] = self.b[i] - self.lr * (1/np.sqrt(n2+self.eps))*self.gradb[i]
             
-
-            #original(without optimizer):
-            # self.W[i] -= self.lr * self.gradW[i] 
-            # self.b[i] -= self.lr * self.gradb[i]
-        return
+        # for i in range(1,4):
+        #     #original(without optimizer):
+        #     self.W[i] -= self.lr * self.gradW[i] 
+        #     self.b[i] -= self.lr * self.gradb[i]
+        # return
     
 
         
@@ -176,7 +229,13 @@ def show_learning_curve(error):
     plt.ylabel("Loss", fontsize=14)
     plt.show()
     return 
-
+def show_acc_epoch_curve(acc):
+    plt.plot(np.sqrt(acc), "r-+", linewidth=0.3, label="train")
+    plt.legend(loc="upper right", fontsize=14)
+    plt.xlabel("Epochs", fontsize=14)
+    plt.ylabel("acc", fontsize=14)
+    plt.show()
+    return 
 def main():
 
     linear_threshold = 0.015
@@ -184,12 +243,14 @@ def main():
     early_stopping_count = 0
     linear_train_error = []
     xor_train_error = []
+    linear_training_acc = []
+    xor_training_acc = []
     
     
     
     #Linear:
     
-    x, y = generate_linear()
+    x, y = generate_linear(n=100)
     x = x.T
     y = y.T
    
@@ -205,24 +266,31 @@ def main():
         model.backward(y, y_pred)
         model.update_weight(i)
 
+        acc=(1.-np.sum(np.abs(y-np.round(y_pred)))/y.shape[1])*100
+        linear_training_acc.append(acc)
+
         if i % model.output_loss_interval == 0:
-            acc=(1.-np.sum(np.abs(y-np.round(y_pred)))/y.shape[1])*100
-            print(f"Epochs {i}: loss={loss} accuracy={acc}%")
+            #acc=(1.-np.sum(np.abs(y-np.round(y_pred)))/y.shape[1])*100
+            print('Epochs{:5} : loss={:.5f} accuracy={:.5f}%'.format(i, loss, acc))
+            # print(f"Epochs {i}: loss={loss} accuracy={acc}%")
         
         if abs(loss) <= linear_threshold:
             early_stopping_count += 1
             if early_stopping_count == 3:
-                print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss}---\n\n")
+                print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss} acc:{acc}%---\n\n")
                 early_stopping_count = 0
                 break
 
     show_result(x, y[0], np.round(y_pred[0]))
     show_learning_curve(linear_train_error)
-    print("\n---Linear Testing Result---")
+    show_acc_epoch_curve(linear_training_acc)
+    print("\n---Linear Prediction Result---")
     y_pred_linear_test = model.forward(x,y)
     y_pred_linear_loss = model.calculate_loss(y, y_pred_linear_test)
     acc=(1.-np.sum(np.abs(y-np.round(y_pred_linear_test)))/y.shape[1])*100
     print(f"loss={y_pred_linear_loss} accuracy={acc}%")
+    print("\n---Linear Testing Prediction---")
+    print(y_pred_linear_test)
 
 
 
@@ -244,26 +312,35 @@ def main():
         model.backward(y, y_pred)
         model.update_weight(i)
 
+        
+        acc=(1.-np.sum(np.abs(y-np.round(y_pred)))/y.shape[1])*100
+        xor_training_acc.append(acc)
+
         if i % model.output_loss_interval == 0:
-            acc=(1.-np.sum(np.abs(y-np.round(y_pred)))/y.shape[1])*100
-            print(f"Epochs {i}: loss={loss} accuracy={acc}%")
+            #acc=(1.-np.sum(np.abs(y-np.round(y_pred)))/y.shape[1])*100
+            print('Epochs{:5} : loss={:.5f} accuracy={:.5f}%'.format(i, loss, acc))
 
         #early stopping
         if abs(loss) <= xor_threashold:
             early_stopping_count += 1
             if early_stopping_count == 3:
-                print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss}---\n\n")
+                print(f"\n\n---Early Stopping at epoch: {i} of loss: {loss} acc:{acc}%---\n\n")
                 break
     show_result(x, y[0], np.round(y_pred[0]))
     show_learning_curve(xor_train_error)
+    show_acc_epoch_curve(xor_training_acc)
 
     #test
-    print("\n---XOR Testing Results---")
+    print("\n---XOR Prediction Results---")
     y_xor_test_pred = model.forward(x,y)
     xor_test_loss = model.calculate_loss(y, y_xor_test_pred)
     acc=(1.-np.sum(np.abs(y-np.round(y_xor_test_pred)))/y.shape[1])*100
+    #show prediction value
+    
     print(f"loss={xor_test_loss} accuracy={acc}%")
-
+    print("\n---XOR testing prediction---")
+    print(y_xor_test_pred)
+   
     
     
 
