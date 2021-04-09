@@ -759,7 +759,7 @@ public:
         for (path.pop_back(); path.size(); path.pop_back()) {
 			state& move = path.back();
 			//error: 真實的值 - (預估的值 - reward)
-			float error = exact - move.value() + move.reward();
+			float error = move.reward() + exact - move.value();
 			exact = move.reward() + update(move.before_state(), alpha * error);
 		}
 	}
