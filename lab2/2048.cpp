@@ -693,14 +693,21 @@ public:
 	state select_best_move(const board& b) const {
 		state after[4] = { 0, 1, 2, 3 }; // up, right, down, left
 		state* best = after;
-        float pop_two=0, pop_four=0, sum=0;
-
 
         //compute after state 分別取上/右/下/左
 		// std::cout<<b;
 		board all_possible_board;
 		for (state* move = after; move != after + 4; move++) {
+			float pop_two=0, pop_four=0, sum=0;
+
 			if (move->assign(b)) {
+				
+				// std::cout<<"\n\n--action--\n";
+				// std::cout<<move->action()<<"\n";
+				// std::cout<<"--before state--\n";
+				// std::cout<<move->before_state()<<"\n";
+				// std::cout<<"--after state--\n";
+				// std::cout<<move->after_state()<<"\n";
 				all_possible_board = move->after_state();  //存all possible state
 				
 				int hole = 0;  //當下的空格數 (有可能可以放2/4的數量)
@@ -725,9 +732,13 @@ public:
 				}
 				sum = (pop_four + pop_two)/hole;
 				move->set_value(move->reward() + sum);
+				
 				// std::cout<<best->value()<<"\n";
-                if (move->value() > best->value())
+                if (move->value() > best->value()){
 					best = move;
+
+				}
+				
 			} 
 			else {
 				move->set_value(-std::numeric_limits<float>::max());
@@ -753,12 +764,20 @@ public:
 	void update_episode(std::vector<state>& path, float alpha = 0.1) const {
         //設定成terminal的value
 		float next_state_value = 0;
+		float cur_value = 0;
 		// std::cout<<"---update---"<<"\n";
         for (path.pop_back(); path.size(); path.pop_back()) {
 			state& move = path.back();
-			float error = move.reward() + next_state_value - move.value();
+			// float error = move.reward() + next_state_value - move.value();
 			// std::cout<<error<<"\n";
-			next_state_value = update(move.before_state(), alpha * error);
+			board tmp_board = move.before_state();
+			// std::cout<<"\n---before state---\n"<<move.action()<<tmp_board<<"\n";
+			cur_value = estimate(tmp_board);
+
+			board tmp_board_after = move.after_state();
+			// std::cout<<"\n---after state---\n"<<tmp_board_after<<"\n";
+
+			next_state_value = update(move.before_state(), alpha * (move.reward() + next_state_value - cur_value));
 		}
 	}
 
