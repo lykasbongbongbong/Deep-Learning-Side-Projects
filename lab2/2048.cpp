@@ -706,7 +706,6 @@ public:
 				int hole = 0;  //當下的空格數 (有可能可以放2/4的數量)
 				// std::cout<<"---first---"<<"\n";
 				// std::cout<<all_possible_board<<"\n";
-
 				for(int i=0;i<16;i++){
 					if(all_possible_board.at(i) == 0){
 						hole+=1;
@@ -725,7 +724,6 @@ public:
 					}
 				}
 				sum = (pop_four + pop_two)/hole;
-				
 				move->set_value(move->reward() + sum);
 				// std::cout<<best->value()<<"\n";
                 if (move->value() > best->value())
@@ -738,7 +736,6 @@ public:
 		}
 		return *best;
 	}
-
 	/**
 	 * update the tuple network by an episode
 	 *
@@ -756,16 +753,12 @@ public:
 	void update_episode(std::vector<state>& path, float alpha = 0.1) const {
         //設定成terminal的value
 		float next_state_value = 0;
-		
+		// std::cout<<"---update---"<<"\n";
         for (path.pop_back(); path.size(); path.pop_back()) {
 			state& move = path.back();
-			
-			//error: r + V(s'') + V(s)
-			// std::cout<<"reward: "<<move.reward()<<"\n";
-			// std::cout<<"value: "<<move.value()<<"\n\n";
 			float error = move.reward() + next_state_value - move.value();
 			// std::cout<<error<<"\n";
-			next_state_value = move.reward() + (move.before_state(), alpha * error);
+			next_state_value = update(move.before_state(), alpha * error);
 		}
 	}
 
