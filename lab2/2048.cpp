@@ -725,8 +725,7 @@ public:
 					}
 				}
 				sum = (pop_four + pop_two)/hole;
-				// std::cout<<sum<<"\n";
-					
+				
 				move->set_value(move->reward() + sum);
 				// std::cout<<best->value()<<"\n";
                 if (move->value() > best->value())
@@ -755,12 +754,18 @@ public:
 	 *  where (x,x,x,x) means (before state, after state, action, reward)
 	 */
 	void update_episode(std::vector<state>& path, float alpha = 0.1) const {
-        float exact = 0;
+        //設定成terminal的value
+		float next_state_value = 0;
+		
         for (path.pop_back(); path.size(); path.pop_back()) {
 			state& move = path.back();
-			//error: 真實的值 - (預估的值 - reward)
-			float error = move.reward() + exact - move.value();
-			exact = move.reward() + update(move.before_state(), alpha * error);
+			
+			//error: r + V(s'') + V(s)
+			// std::cout<<"reward: "<<move.reward()<<"\n";
+			// std::cout<<"value: "<<move.value()<<"\n\n";
+			float error = move.reward() + next_state_value - move.value();
+			// std::cout<<error<<"\n";
+			next_state_value = move.reward() + (move.before_state(), alpha * error);
 		}
 	}
 
