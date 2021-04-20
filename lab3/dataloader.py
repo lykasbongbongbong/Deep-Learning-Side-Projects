@@ -26,8 +26,3 @@ def read_bci_data():
 
     return train_data, train_label, test_data, test_label
 
-def main():
-    train_data, train_label, test_data, test_label = read_bci_data()
-    print(train_data)
-if __name__ == '__main__':
-    main()
