@@ -9,7 +9,8 @@ import copy
 import numpy as np
 import os
 from utils.plot_result import plot_result
-import models
+from utils.models import DeepConvNet
+
 
             
 
@@ -48,7 +49,7 @@ def main():
         elif activate_func is "ELU":
             activation = nn.ELU()
         
-        model = models.DeepConvNet(activation)
+        model = DeepConvNet(activation)
         model.to(device)
         optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
 

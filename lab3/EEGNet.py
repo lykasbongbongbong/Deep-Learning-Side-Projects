@@ -7,8 +7,8 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import copy
 import numpy as np
-import models
 from utils.plot_result import plot_result
+from utils.models import EEGNet
 import os
 
 def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=False, save_model=False, pretrained_path="EEGNet.weight"):
@@ -46,7 +46,7 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
         elif activate_func is "ELU":
             activation = nn.ELU()
 
-        EEGNet_model = models.EEGNet(activation)
+        EEGNet_model = EEGNet(activation)
         EEGNet_model.to(device)
         Loss = nn.CrossEntropyLoss()
         optimizer = Adam(EEGNet_model.parameters(), lr=learning_rate, weight_decay=0.001)
