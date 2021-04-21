@@ -7,43 +7,9 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import copy
 import numpy as np
-
-
-class EEGNet(nn.Module):
-    def __init__(self, activation=nn.ReLU()):
-        super(EEGNet,self).__init__()
-        self.activation = activation
-        self.firstconv=nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=(1,51), stride=(1,1), padding=(0,25), bias=False),
-            nn.BatchNorm2d(16, eps=1e-5, momentum=0.1, affine=True, track_running_stats=True)
-        )
-        self.depthwiseConv = nn.Sequential(
-            nn.Conv2d(16,32,kernel_size=(2,1), stride=(1,1), groups=16, bias=False),
-            nn.BatchNorm2d(32, eps=1e-5, momentum=0.1, affine=True, track_running_stats=True),
-            activation, 
-            nn.AvgPool2d(kernel_size=(1,4), stride=(1,4), padding=0),
-            nn.Dropout(p=0.25)
-        )
-        self.separableConv = nn.Sequential(
-            nn.Conv2d(32, 32, kernel_size=(1, 15), stride=(1,1), padding=(0, 7), bias=False),
-            nn.BatchNorm2d(32, eps=1e-5, momentum=0.1, affine=True, track_running_stats=True),
-            activation, 
-            nn.AvgPool2d(kernel_size=(1,8), stride=(1,8), padding=0),
-            nn.Dropout(p=0.25)
-        )
-        self.classify = nn.Sequential(
-            nn.Linear(in_features=736, out_features=2, bias=True)
-        )
-    
-    def forward(self, x):
-        out = self.firstconv(x)
-        out = self.depthwiseConv(out)
-        out = self.separableConv(out)
-        out = out.view(out.shape[0], -1)
-        out = self.classify(out)
-        return out
-
-
+import models
+from utils.plot_result import plot_result
+import os
 
 def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=False, save_model=False, pretrained_path="EEGNet.weight"):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -52,7 +18,7 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
     learning_rate = 0.001
     epochs = 300
     activation_list = ["LeakyReLU", "ReLU", "ELU"]
-    print_interval = 100
+    print_interval = 10
 
     #data: fetch and convert to tensor/put it into dataloader
     train_data, train_label, test_data, test_label = dataloader.read_bci_data()
@@ -71,7 +37,7 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
     acc_train_dict = {"LeakyReLU":[], "ReLU":[], "ELU":[]}
     acc_test_dict = {"LeakyReLU":[], "ReLU":[], "ELU":[]}
 
-        #train
+    #train
     for activate_func in activation_list:
         if activate_func is "LeakyReLU":
             activation = nn.LeakyReLU(negative_slope=0.1)
@@ -80,7 +46,7 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
         elif activate_func is "ELU":
             activation = nn.ELU()
 
-        EEGNet_model = EEGNet(activation)
+        EEGNet_model = models.EEGNet(activation)
         EEGNet_model.to(device)
         Loss = nn.CrossEntropyLoss()
         optimizer = Adam(EEGNet_model.parameters(), lr=learning_rate, weight_decay=0.001)
@@ -142,24 +108,13 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
     print(f"Best Activation: {best_activation}")
     print(f"Best Accuracy: {best_accuracy:.4f}")
     if save_model:
-        torch.save(best_model_state, "EGGNet.weight")
-    plot_result(epochs, acc_train_dict, acc_test_dict)
+        weight_name = "weight/EEGNet.weight"
+        folder = weight_name.split('/')[0]
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        torch.save(best_model_state, weight_name)
+    plot_result(epochs, acc_train_dict, acc_test_dict, "EEGNet", "result/EEGNet.png")
 
-def plot_result(epochs, acc_train_dict, acc_test_dict):
-    # fig, ax = plt.subplots()  # Create a figure and an axes.
-    
-    x = np.arange(1, epochs+1)
-    plt.plot(x, acc_train_dict["ReLU"], label='relu_train')  # Plot some data on the axes.
-    plt.plot(x, acc_test_dict["ReLU"], label='relu_test')  # Plot some data on the axes.
-    plt.plot(x, acc_train_dict["LeakyReLU"], label='leaky_relu_train')  # Plot more data on the axes...
-    plt.plot(x, acc_test_dict["LeakyReLU"], label='leaky_relu_test')  # ... and some more.
-    plt.plot(x, acc_train_dict["ELU"], label='elu_train')  # Plot more data on the axes...
-    plt.plot(x, acc_test_dict["ELU"], label='elu_test')  # ... and some more.
-    plt.ylabel('Accuracy(%)')  # Add an x-label to the axes.
-    plt.xlabel('Epoch')  # Add a y-label to the axes.
-    plt.title("Activation function comparison(EEGNet)")  # Add a title to the axes.
-    plt.legend()  # Add a legend.
-    plt.savefig('EGGNet.png')
 
 
 if __name__ == '__main__':
@@ -167,6 +122,6 @@ if __name__ == '__main__':
     do_test = True
     pretrained_train = False
     pretrained_test = False
-    save_model = False
+    save_model = True
     pretrained_path = "EEGNet.weight"
     main(pretrained_train, pretrained_test, do_train, do_test, save_model, pretrained_path)

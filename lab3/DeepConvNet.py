@@ -7,61 +7,9 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import copy
 import numpy as np
-
-
-class DeepConvNet(nn.Module):
-    def __init__(self, activation=nn.ReLU()):
-        super(DeepConvNet,self).__init__()
-        self.C = 2
-        self.T = 750
-        self.N = 2
-        self.activation = activation
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 25, kernel_size=(1,5), stride=(1,1), bias=False),
-            nn.Conv2d(25, 25, kernel_size = (self.C, 1), stride=(1,1), bias=False),
-            nn.BatchNorm2d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-            activation,
-            nn.MaxPool2d(kernel_size=(1,2)),
-            nn.Dropout(p=0.5)
-        )
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(25, 50, kernel_size = (1, 5), stride=(1,1), bias=False),
-            nn.BatchNorm2d(50, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-            activation,
-            nn.MaxPool2d(kernel_size=(1,2)),
-            nn.Dropout(p=0.5)
-        )
-        self.conv3 = nn.Sequential(
-            nn.Conv2d(50, 100, kernel_size = (1, 5), stride=(1,1), bias=False),
-            nn.BatchNorm2d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-            activation,
-            nn.MaxPool2d(kernel_size=(1,2)),
-            nn.Dropout(p=0.5)
-        )
-
-        self.conv4 = nn.Sequential(
-            nn.Conv2d(100, 200, kernel_size = (1, 5), stride=(1,1), bias=False),
-            nn.BatchNorm2d(200, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-            activation,
-            nn.MaxPool2d(kernel_size=(1,2)),
-            nn.Dropout(p=0.5)
-        )
-
-        self.classify = nn.Sequential(
-            nn.Linear(in_features=8600, out_features=2, bias=True)
-        )
-            
-            
-        
-    def forward(self, x):
-        out = self.conv1(x)
-        out = self.conv2(out)
-        out = self.conv3(out)
-        out = self.conv4(out)
-        out = out.view(out.shape[0], -1)
-        out = self.classify(out)
-        return out
-
+import os
+from utils.plot_result import plot_result
+import models
 
             
 
@@ -100,7 +48,7 @@ def main():
         elif activate_func is "ELU":
             activation = nn.ELU()
         
-        model = DeepConvNet(activation)
+        model = models.DeepConvNet(activation)
         model.to(device)
         optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
 
@@ -156,25 +104,15 @@ def main():
     print(f"Best Activation Function: {best_activation}")
 
         
-    torch.save(best_model, "DeepConvNet.weight")
-    plot_result(epochs, train_acc_dict, test_acc_dict)
-
-
-def plot_result(epochs, train_acc_dict, test_acc_dict):
-    # fig, ax = plt.subplots()  # Create a figure and an axes.
+    weight_name = "weight/DeepConvNet.weight"
+    folder = weight_name.split('/')[0]
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    torch.save(best_model, weight_name)
     
-    x = np.arange(1, epochs+1)
-    plt.plot(x, train_acc_dict["ReLU"], label='relu_train')  # Plot some data on the axes.
-    plt.plot(x, test_acc_dict["ReLU"], label='relu_test')  # Plot some data on the axes.
-    plt.plot(x, train_acc_dict["LeakyReLU"], label='leaky_relu_train')  # Plot more data on the axes...
-    plt.plot(x, test_acc_dict["LeakyReLU"], label='leaky_relu_test')  # ... and some more.
-    plt.plot(x, train_acc_dict["ELU"], label='elu_train')  # Plot more data on the axes...
-    plt.plot(x, test_acc_dict["ELU"], label='elu_test')  # ... and some more.
-    plt.ylabel('Accuracy(%)')  # Add an x-label to the axes.
-    plt.xlabel('Epoch')  # Add a y-label to the axes.
-    plt.title("Activation function comparison (DeepConvNet)")  # Add a title to the axes.
-    plt.legend()  # Add a legend.
-    plt.savefig('DeepConvNet.png')
+    plot_result(epochs, train_acc_dict, test_acc_dict, "DeepConvNet", "result/DeepConvNet.png")
+
+
 
 
 
