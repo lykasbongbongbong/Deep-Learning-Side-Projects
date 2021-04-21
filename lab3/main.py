@@ -62,11 +62,7 @@ def main():
 
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
-
     
-
-  
-
     
     #train
     EEGNet_model = EEGNet()
