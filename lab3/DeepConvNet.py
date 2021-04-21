@@ -51,7 +51,7 @@ def main():
         
         model = DeepConvNet(activation)
         model.to(device)
-        optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
+        optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
 
         print(f"\n\n-----Activation Function: {activation}-----")
         

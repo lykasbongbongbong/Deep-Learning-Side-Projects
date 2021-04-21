@@ -49,8 +49,7 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
         EEGNet_model = EEGNet(activation)
         EEGNet_model.to(device)
         Loss = nn.CrossEntropyLoss()
-        optimizer = Adam(EEGNet_model.parameters(), lr=learning_rate, weight_decay=0.001)
-        # optimizer = SGD(EEGNet_model.parameters(), lr=learning_rate, momentum=0.9)
+        optimizer = Adam(EEGNet_model.parameters(), lr=learning_rate, weight_decay=0.01)
         print(f"\n\n-----Activation Function: {activation}-----")
         
         for epoch in range(1,epochs+1):
