@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+import copy
 
 
 class EEGNet(nn.Module):
@@ -40,16 +41,17 @@ class EEGNet(nn.Module):
         out = out.view(out.shape[0], -1)
         out = self.classify(out)
         return out
-    
-    
+
+
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     batch_size = 256
     learning_rate = 0.001
-    epochs = 1000
+    epochs = 300
     activation_list = ["LeakyReLU", "ReLU", "ELU"]
+    print_interval = 100
 
     #data: fetch and convert to tensor/put it into dataloader
     train_data, train_label, test_data, test_label = dataloader.read_bci_data()
@@ -58,15 +60,14 @@ def main():
     test_data = torch.from_numpy(test_data)
     test_label = torch.from_numpy(test_label)
 
-    train_set = TensorDataset(train_data, train_label)
-    test_set = TensorDataset(test_data, test_label)
-
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=4)
-    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=4)
+    train_loader = DataLoader(TensorDataset(train_data, train_label), batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(TensorDataset(test_data, test_label), batch_size=batch_size, shuffle=False)
     
-    
-    #train
    
+    best_activation = 1
+    best_accuracy = 0.
+    best_model_state = dict()
+        #train
     for activate_func in activation_list:
         if activate_func is "LeakyReLU":
             activation = nn.LeakyReLU()
@@ -79,26 +80,30 @@ def main():
         EEGNet_model.to(device)
         Loss = nn.CrossEntropyLoss()
         optimizer = Adam(EEGNet_model.parameters(), lr=learning_rate, weight_decay=0.001)
-        best_acc = 0
         print(f"Activation Function: {activation}")
-        for epoch in range(1, epochs+1):
+        
+        for epoch in range(1,epochs+1):
+            if epoch % print_interval == 0:
+                print(f"epoch:{epoch}")
+            
+            #train
             EEGNet_model.train()
             total_loss = 0
             acc = 0
             for _, (data, label) in enumerate(train_loader):
                 data = data.to(device, dtype=torch.float)
                 label = label.to(device, dtype=torch.long)
-                pred = EEGNet_model(data)
-                loss = Loss(pred, label)
+                y_pred = EEGNet_model.forward(data)
+                loss = Loss(y_pred, label)
                 total_loss += loss.item()
-                acc += pred.max(dim=1)[1].eq(label).sum().item()
+                acc += y_pred.max(dim=1)[1].eq(label).sum().item()
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
             total_loss /= len(train_loader.dataset)
             acc = 100.*acc/len(train_loader.dataset)
-            if epoch % 10 == 0:
-                print(f"Training: epoch:{epoch} loss:{total_loss} accuracy:{acc}")
+            if epoch % print_interval == 0:
+                print(f"[Training] loss:{total_loss:.4f} accuracy:{acc:.1f}")
 
             #test
             EEGNet_model.eval()
@@ -109,13 +114,15 @@ def main():
                 pred = EEGNet_model(data)
                 acc += pred.max(dim=1)[1].eq(label).sum().item()
             acc = 100. * acc/len(test_loader.dataset)
-            # if acc > best_acc:
-            #     best_evaluated_acc[name]=correct
-            #     best_model_wts[name]=copy.deepcopy(model.state_dict())
-            if epoch % 10 == 0:
-                print(f"Testing: epoch:{epoch} loss:{total_loss} accuracy:{acc}")
-
-
+            if acc > best_accuracy:
+                best_accuracy = acc
+                best_model_state = EEGNet_model.state_dict()
+                best_activation = activate_func
+            if epoch % print_interval == 0:
+                print(f"[Testing] loss:{total_loss:.4f} accuracy:{acc:.1f}")
+    print(f"Best Activation: {best_activation}")
+    print(f"Best Accuracy: {best_accuracy}")
+    torch.save(best_model_state, "weight/EGGNet.weight")
 
 
 if __name__ == '__main__':
