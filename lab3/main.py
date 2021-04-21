@@ -72,62 +72,40 @@ def main():
     EEGNet_model = EEGNet()
     EEGNet_model.to(device)
     Loss = nn.CrossEntropyLoss()
-    optimizer = Adam(EEGNet_model.parameters(), lr=learning_rate, weight_decay=0.01)
+    optimizer = Adam(EEGNet_model.parameters(), lr=learning_rate, weight_decay=0.001)
     for epoch in range(1, epochs+1):
         EEGNet_model.train()
         total_loss = 0
-        accuracy = 0
+        acc = 0
         for _, (data, label) in enumerate(train_loader):
             data = data.to(device, dtype=torch.float)
             label = label.to(device, dtype=torch.long)
             pred = EEGNet_model(data)
             loss = Loss(pred, label)
             total_loss += loss.item()
-            accuracy += pred.max(dim=1)[1].eq(label).sum().item()
+            acc += pred.max(dim=1)[1].eq(label).sum().item()
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
         total_loss /= len(train_loader.dataset)
-        accuracy = 100.*accuracy/len(train_loader.dataset)
+        acc = 100.*acc/len(train_loader.dataset)
         if epoch % 10 == 0:
-            print(f"epoch:{epoch} loss:{total_loss} accuracy:{accuracy}")
+            print(f"Training: epoch:{epoch} loss:{total_loss} accuracy:{acc}")
+
+        #test
+        EEGNet_model.eval()
+        acc = 0
+        for _, (data, label) in enumerate(test_loader):
+            data = data.to(device, dtype=torch.float)
+            label = label.to(device, dtype=torch.long)
+            pred = EEGNet_model(data)
+            acc += pred.max(dim=1)[1].eq(label).sum().item()
+        acc = 100. * acc/len(test_loader.dataset)
+        if epoch % 10 == 0:
+            print(f"Testing: epoch:{epoch} loss:{total_loss} accuracy:{acc}")
 
 
 
-
-
-    # model = model.EEGNet()
-    # optimizer = Adam(model.parameters(), lr=learning_rate)
-    # 
-   
-
-
-    # #檢查有沒有GPU:
-    # if torch.cuda.is_available():
-    #     model = model.cuda()
-    #     loss = loss.cuda()
-    #     train_data = train_data.cuda()
-    #     train_label = train_label.cuda()
-    #     test_data = test_data.cuda()
-    #     test_label = test_label.cuda()
-    
-    # accuracy_train = list()
-    # accuracy_test = list()
-    
-    # #train
-    # for epoch in range(epochs):
-    #     model.train()
-    #     train_loss = 0
-    #     optimizer.zero_grad()
-    #     output_train = model(train_data)
-            
-    
-
-    
-
-    
-    #test
-    # print(model)
 
 if __name__ == '__main__':
     main()
