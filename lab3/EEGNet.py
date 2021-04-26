@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import copy
 import numpy as np
-from utils.plot_result import plot_result
+from utils.plot_result import plot_accuracy
 from utils.models import EEGNet
 import os
 
@@ -18,6 +18,7 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
     learning_rate = 0.001
     epochs = 300
     activation_list = ["LeakyReLU", "ReLU", "ELU"]
+    # activation_list = ["ELU"]
     print_interval = 10
 
     #data: fetch and convert to tensor/put it into dataloader
@@ -36,6 +37,11 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
     best_model_state = dict()
     acc_train_dict = {"LeakyReLU":[], "ReLU":[], "ELU":[]}
     acc_test_dict = {"LeakyReLU":[], "ReLU":[], "ELU":[]}
+
+    #分開來看best acc 依據不同的AF
+    
+    best_training_accuracy = 0.
+    
 
     #train
     for activate_func in activation_list:
@@ -75,6 +81,8 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
                     optimizer.step()
                 total_loss /= len(train_loader.dataset)
                 acc = 100.*acc/len(train_loader.dataset)
+                if acc > best_training_accuracy:
+                    best_training_accuracy = acc
                 acc_train_dict[activate_func].append(acc)
                 if epoch % print_interval == 0:
                     print(f"[Training] loss:{total_loss:.4f} accuracy:{acc:.1f}")
@@ -104,15 +112,23 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
                     print(f"[Testing] loss:{total_loss:.4f} accuracy:{acc:.1f}")
                
 
-    print(f"Best Activation: {best_activation}")
-    print(f"Best Accuracy: {best_accuracy:.4f}")
+    print(f"\n\nActivation: {best_activation}")
+    # print(f"Best training accuracy: {best_training_accuracy:.4f}")
+    print(f"Best testing Accuracy: {best_accuracy:.4f}\n\n")
+    # print(acc_train_dict)
+   
+    
+
+
+
+
     if save_model:
         weight_name = "weight/EEGNet.weight"
         folder = weight_name.split('/')[0]
         if not os.path.exists(folder):
             os.makedirs(folder)
         torch.save(best_model_state, weight_name)
-    plot_result(epochs, acc_train_dict, acc_test_dict, "EEGNet", "result/EEGNet.png")
+    plot_accuracy(epochs, acc_train_dict, acc_test_dict, "EEGNet", "result/EEGNet.png")
 
 
 

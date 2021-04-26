@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import copy
 import numpy as np
 import os
-from utils.plot_result import plot_result
+from utils.plot_result import plot_accuracy
 from utils.models import DeepConvNet
 
 
@@ -33,12 +33,16 @@ def main():
     train_loader = DataLoader(TensorDataset(train_data, train_label), batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(TensorDataset(test_data, test_label), batch_size=batch_size, shuffle=False)
 
-    activation_list = ["LeakyReLU", "ReLU", "ELU"]
+    # activation_list = ["LeakyReLU", "ReLU", "ELU"]
+    activation_list = ["LeakyReLU"]
+
+
 
     train_acc_dict = {"LeakyReLU":[], "ReLU":[], "ELU":[]}
     test_acc_dict = {"LeakyReLU":[], "ReLU":[], "ELU":[]}
 
-    best_accuracy = 0
+    best_accuracy = 0.
+    best_training_accuracy = 0.
     
 
     for activate_func in activation_list:
@@ -75,6 +79,8 @@ def main():
                 optimizer.step()
             total_loss = total_loss/len(train_loader.dataset)
             acc = 100.*acc/len(train_loader.dataset) 
+            if acc > best_training_accuracy:
+                best_training_accuracy = acc
             train_acc_dict[activate_func].append(acc)
             
             if epoch % print_interval == 0:
@@ -101,7 +107,8 @@ def main():
             if epoch % print_interval == 0:
                 print(f"[Testing] loss:{total_loss:.4f} accuracy:{acc:.1f}")
 
-    print(f"Best Accuracy: {best_accuracy}")
+    # print(f"Best Training Accuracy: {best_training_accuracy}")
+    print(f"Best Testing Accuracy: {best_accuracy}")
     print(f"Best Activation Function: {best_activation}")
 
         
@@ -111,7 +118,7 @@ def main():
         os.makedirs(folder)
     torch.save(best_model, weight_name)
     
-    plot_result(epochs, train_acc_dict, test_acc_dict, "DeepConvNet", "result/DeepConvNet.png")
+    plot_accuracy(epochs, train_acc_dict, test_acc_dict, "DeepConvNet", "result/DeepConvNet.png")
 
 
 

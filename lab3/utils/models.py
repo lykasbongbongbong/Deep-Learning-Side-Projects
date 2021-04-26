@@ -62,7 +62,7 @@ class DeepConvNet(nn.Module):
         )
         self.conv3 = nn.Sequential(
             nn.Conv2d(50, 100, kernel_size = (1, 5), stride=(1,1), bias=False),
-            nn.BatchNorm2d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            # nn.BatchNorm2d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             activation,
             nn.MaxPool2d(kernel_size=(1,2)),
             nn.Dropout(p=0.5)
