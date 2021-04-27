@@ -63,8 +63,6 @@ def main(pretrained_train=False, save_model=False, pretrained_path="EEGNet.weigh
                 print(f"epoch:{epoch}")
             
            
-            if pretrained_train:
-                EEGNet_model.load_state_dict(torch.load(pretrained_path))
             EEGNet_model.train()
             total_loss = 0
             acc = 0.
@@ -103,7 +101,7 @@ def main(pretrained_train=False, save_model=False, pretrained_path="EEGNet.weigh
             acc_test_dict[activate_func].append(acc)
             if acc > best_accuracy:
                 best_accuracy = acc
-                best_model_state = copy.deepcopy(EEGNet_model.state_dict())
+                best_model_state = EEGNet_model.state_dict()
                 best_activation = activate_func
             if epoch % print_interval == 0:
                 print(f"[Testing] loss:{total_loss:.4f} accuracy:{acc:.1f}")

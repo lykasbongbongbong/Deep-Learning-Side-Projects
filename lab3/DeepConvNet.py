@@ -113,7 +113,7 @@ def main():
     print(f"Best Testing Accuracy: {best_accuracy:.4f}\n\n")
 
         
-    weight_name = "weight/"+best_activation+"_DeepConvNet.weight"
+    weight_name = "weight/DeepConvNet.weight"
     folder = weight_name.split('/')[0]
     if not os.path.exists(folder):
         os.makedirs(folder)
