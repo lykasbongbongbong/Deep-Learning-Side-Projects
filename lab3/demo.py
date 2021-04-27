@@ -31,11 +31,12 @@ def demo():
     
     
     #test EEGNet
-    activation = nn.ReLU()
+    #activation = nn.ReLU()
+    activation = nn.LeakyReLU()
     EEGNet_model = EEGNet(activation)
     EEGNet_model.to(device)
        
-    EEGNet_model.load_state_dict(torch.load("weight/EEGNet.weight"))
+    EEGNet_model.load_state_dict(torch.load("weight/EEGNet_Demo.weight"))
     EEGNet_model.eval()
 
     acc = 0.
