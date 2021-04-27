@@ -112,7 +112,7 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
                     print(f"[Testing] loss:{total_loss:.4f} accuracy:{acc:.1f}")
                
 
-    print(f"\n\nActivation: {best_activation}")
+    print(f"\n\nBest Activation: {best_activation}")
     # print(f"Best training accuracy: {best_training_accuracy:.4f}")
     print(f"Best testing Accuracy: {best_accuracy:.4f}\n\n")
     # print(acc_train_dict)
@@ -124,6 +124,7 @@ def main(pretrained_train=False, pretrained_test=False, do_train=False, do_test=
 
     if save_model:
         weight_name = "weight/EEGNet.weight"
+        # weight_name = "weight/EEGNet.weight"
         folder = weight_name.split('/')[0]
         if not os.path.exists(folder):
             os.makedirs(folder)

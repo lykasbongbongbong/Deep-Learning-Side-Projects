@@ -33,8 +33,8 @@ def main():
     train_loader = DataLoader(TensorDataset(train_data, train_label), batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(TensorDataset(test_data, test_label), batch_size=batch_size, shuffle=False)
 
-    # activation_list = ["LeakyReLU", "ReLU", "ELU"]
-    activation_list = ["LeakyReLU"]
+    activation_list = ["LeakyReLU", "ReLU", "ELU"]
+    # activation_list = ["ELU"]
 
 
 
@@ -43,6 +43,7 @@ def main():
 
     best_accuracy = 0.
     best_training_accuracy = 0.
+    
     
 
     for activate_func in activation_list:
@@ -108,11 +109,11 @@ def main():
                 print(f"[Testing] loss:{total_loss:.4f} accuracy:{acc:.1f}")
 
     # print(f"Best Training Accuracy: {best_training_accuracy}")
-    print(f"Best Testing Accuracy: {best_accuracy}")
-    print(f"Best Activation Function: {best_activation}")
+    print(f"\n\nBest Activation Function: {best_activation}")
+    print(f"Best Testing Accuracy: {best_accuracy:.4f}\n\n")
 
         
-    weight_name = "weight/DeepConvNet.weight"
+    weight_name = "weight/"+best_activation+"_DeepConvNet.weight"
     folder = weight_name.split('/')[0]
     if not os.path.exists(folder):
         os.makedirs(folder)
