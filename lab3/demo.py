@@ -46,7 +46,7 @@ def demo():
         pred = EEGNet_model(data)
         acc += pred.max(dim=1)[1].eq(label).sum().item()
     acc = 100. * acc/len(test_loader.dataset)
-    print(f"EEGNet Accuracy: {acc:.4f}")
+    print(f"EEGNet Accuracy: {acc:.4f}, using Leaky ReLU")
 
 
 
