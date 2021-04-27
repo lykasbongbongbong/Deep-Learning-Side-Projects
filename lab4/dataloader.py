@@ -1,6 +1,9 @@
 import pandas as pd
 from torch.utils import data
 import numpy as np
+import cv2
+from PIL import Image
+from torchvision import transforms
 
 
 def getData(mode):
@@ -8,18 +11,19 @@ def getData(mode):
         img = pd.read_csv('train_img.csv')
         label = pd.read_csv('train_label.csv')
         return np.squeeze(img.values), np.squeeze(label.values)
-    else:
+    elif mode == 'test':
         img = pd.read_csv('test_img.csv')
         label = pd.read_csv('test_label.csv')
         return np.squeeze(img.values), np.squeeze(label.values)
-
+    else:
+        raise Exception("Wrong Mode! Type only train/test")
 
 class RetinopathyLoader(data.Dataset):
     def __init__(self, root, mode):
         """
         Args:
-            root (string): Root path of the dataset.
-            mode : Indicate procedure status(training or testing)
+            root (string): dataset 的 root path
+            mode : 要做 training / testing
 
             self.img_name (string list): String list that store all image names.
             self.label (int or float list): Numerical list that store all ground truth label values.
@@ -39,7 +43,7 @@ class RetinopathyLoader(data.Dataset):
         """
            step1. Get the image path from 'self.img_name' and load it.
                   hint : path = root + self.img_name[index] + '.jpeg'
-           
+
            step2. Get the ground truth label from self.label
                      
            step3. Transform the .jpeg rgb images during the training phase, such as resizing, random flipping, 
@@ -53,5 +57,16 @@ class RetinopathyLoader(data.Dataset):
                          
             step4. Return processed image and label
         """
+        #step1: 拿到img
+        path = self.root + "/" + self.img_name[index] + ".jpeg"
+        img = Image.open(path)
+
+        #step2: 照片的label
+        label = self.label[index]
+
+        #step3: transform
+        tran = transforms.Compose([transforms.RandomHorizontalFlip(),transforms.RandomVerticalFlip(),transforms.ToTensor(), transforms.Normalize((0.3749, 0.2602, 0.1857),(0.2526, 0.1780, 0.1291))])
+        img = tran(img)
 
         return img, label
+

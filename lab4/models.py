@@ -13,6 +13,7 @@ from torch.autograd.function import once_differentiable
 import time
 import functools
 
+#分別定義resnet 18 / resnet50
 
 class ResNet(nn.Module):
     def __init__(self, pretrained=True):
