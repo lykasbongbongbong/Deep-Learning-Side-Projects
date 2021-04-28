@@ -33,8 +33,8 @@ def main():
     train_loader = DataLoader(TensorDataset(train_data, train_label), batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(TensorDataset(test_data, test_label), batch_size=batch_size, shuffle=False)
 
-    # activation_list = ["LeakyReLU", "ReLU", "ELU"]
-    activation_list = ["LeakyReLU"]
+    activation_list = ["LeakyReLU", "ReLU", "ELU"]
+    # activation_list = ["ELU"]
 
 
 
@@ -43,6 +43,7 @@ def main():
 
     best_accuracy = 0.
     best_training_accuracy = 0.
+    
     
 
     for activate_func in activation_list:
@@ -108,8 +109,13 @@ def main():
                 print(f"[Testing] loss:{total_loss:.4f} accuracy:{acc:.1f}")
 
     # print(f"Best Training Accuracy: {best_training_accuracy}")
+<<<<<<< HEAD
     print(f"\n\nBest Testing Accuracy: {best_accuracy}")
     print(f"Best Activation Function: {best_activation}\n\n")
+=======
+    print(f"\n\nBest Activation Function: {best_activation}")
+    print(f"Best Testing Accuracy: {best_accuracy:.4f}\n\n")
+>>>>>>> 1e52104ceb2a5b897740e424e4fcb5b70d1c2d8e
 
         
     weight_name = "weight/DeepConvNet.weight"
