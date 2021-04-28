@@ -1,43 +1,39 @@
 from dataloader import RetinopathyLoader
 from torch.utils.data import DataLoader, TensorDataset
 # from models import ResNet18, ResNet50
+import torch.nn as nn
+from models import ResNet
+
 import torch
 def resnet_18_w_pretrained():
-    batch_size = 256
+    batch_size = 16
     epochs = 300
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     #load data
+    # 因為RetinopathyLoader有繼承data.Dataset 所以回傳是一個dataloader object
     trainset = RetinopathyLoader(root="data", mode="train")
     testset = RetinopathyLoader(root="data", mode="test")
-    train_loader = Dataset(TensorDataset(trainset), batch_size=batch_size, shuffle=True)
-    test_loader = Dataset(TensorDataset(testset), batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False)
 
+    model = ResNet(pretrained=True)
+    model.to(device)
+    model.train()
+    Loss = nn.CrossEntropyLoss()
 
-    # train_data, train_label =  dataloader.getData("train")
-    # test_data, test_label = dataloader.getData("test")
-    # print(type(train_label))
-    # ads()
-    # train_data = torch.from_numpy(train_data)
-    # train_label = torch.from_numpy(train_label)
-    # test_data = torch.from_numpy(test_data)
-    # test_label = torch.from_numpy(test_label)
-    # train_loader = DataLoader(TensorDataset(train_data, train_label), batch_size=batch_size, shuffle=True)
-    # test_loader = DataLoader(TensorDataset(test_data, test_label), batch_size=batch_size, shuffle=False)
-
-
-    # asd()
-    # model = ResNet18(pretrained=True)
-    # model.to(device)
-    # model.train()
-    # Loss = nn.CrossEntropyLoss()
-
-    # for epoch in range(1, epochs+1):
-    #     for _, (data, label) in enumerate(train_loader):
-    #         data = data.to(device)
-    #         label = label.to(device)
-    #         pred = model(data)
-    #         loss = Loss(pred, label)
-    #         loss.backward()
+    for epoch in range(1, epochs+1):
+        for _, (data, label) in enumerate(train_loader):
+            '''
+            data.shape [256, 3, 512, 512]
+            label.shape [256]
+            '''
+            data = data.to(device)
+            label = label.to(device)
+            pred = model(data)
+            loss = Loss(pred, label)
+            print(loss.shape)
+            asd()
+            loss.backward()
 
 # def resnet_18_wo_pretrained():
 
