@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 from PIL import Image
 from torchvision import transforms
+import os
 
 
 def getData(mode):
@@ -25,8 +26,8 @@ class RetinopathyLoader(data.Dataset):
             root (string): dataset 的 root path
             mode : 要做 training / testing
 
-            self.img_name (string list): String list that store all image names.
-            self.label (int or float list): Numerical list that store all ground truth label values.
+            self.img_name (string list): 存mode下所有的image (list)
+            self.label (int or float list): 存mode下所有image的label (list)
         """
         self.root = root
         self.img_name, self.label = getData(mode)
@@ -38,6 +39,7 @@ class RetinopathyLoader(data.Dataset):
         return len(self.img_name)
 
     def __getitem__(self, index):
+        # support the indexing such taht dataset[i] can be used to get i-th sample
         """something you should implement here"""
 
         """
@@ -57,14 +59,9 @@ class RetinopathyLoader(data.Dataset):
                          
             step4. Return processed image and label
         """
-        #step1: 拿到img
-        path = self.root + "/" + self.img_name[index] + ".jpeg"
+        path = os.path.join(self.root, self.img_name[index]+".jpeg")
         img = Image.open(path)
-
-        #step2: 照片的label
         label = self.label[index]
-
-        #step3: transform
         tran = transforms.Compose([transforms.RandomHorizontalFlip(),transforms.RandomVerticalFlip(),transforms.ToTensor(), transforms.Normalize((0.3749, 0.2602, 0.1857),(0.2526, 0.1780, 0.1291))])
         img = tran(img)
 
