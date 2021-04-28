@@ -2,7 +2,7 @@ import os
 import torch
 print(torch.__version__)
 print(torch.cuda.is_available())
-device=torch.device('cuda',0)
+device=torch.device('cuda',1)
 from torch.utils.data import Dataset,DataLoader
 from torchvision import transforms,models
 import torch.nn as nn
@@ -12,7 +12,6 @@ from PIL import Image
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
 
 class RetinopathyDataSet(Dataset):
     def __init__(self, img_path, mode):
@@ -46,8 +45,6 @@ class RetinopathyDataSet(Dataset):
         label=self.labels[index]
         
         return img, label
-
-
 class ResNet18(nn.Module):
     def __init__(self,num_class,pretrained=False):
         """
@@ -84,12 +81,13 @@ class ResNet50(nn.Module):
             for param in self.model.parameters():
                 param.requires_grad=False
         num_neurons=self.model.fc.in_features
-        self.model.fc=nn.Linear(num_neurons,num_class)
+        self.model.fc=nn.Linear(num_neurons,512)
+        self.fc=nn.Linear(512,5)
         
     def forward(self,X):
         out=self.model(X)
+        out=self.fc(out)
         return out
-
 
 def train(model,loader_train,loader_test,Loss,optimizer,epochs,device,num_class,name):
     """
@@ -180,7 +178,6 @@ def evaluate(model,loader_test,device,num_class):
             for i in range(len(targets)):
                 confusion_matrix[int(targets[i])][int(predict_class[i])]+=1
         acc=100.*correct/len(loader_test.dataset)
-        print(f'Testing epoch{epoch:>2d} loss:{total_loss:.4f} acc:{acc:.2f}%')
         
     # normalize confusion_matrix
     confusion_matrix=confusion_matrix/confusion_matrix.sum(axis=1).reshape(num_class,1)
@@ -206,7 +203,7 @@ def plot(dataframe1,title):
 
 def plot_confusion_matrix(confusion_matrix):
     fig, ax = plt.subplots(figsize=(6,6))
-    ax.matshow(confusion_matrix, cmap=plt.cm.Blues)
+    # ax.matshow(confusion_matrix, cmap=plt.cm.Blues)
     ax.xaxis.set_label_position('top')
     for i in range(confusion_matrix.shape[0]):
         for j in range(confusion_matrix.shape[1]):
@@ -219,16 +216,20 @@ def plot_confusion_matrix(confusion_matrix):
 num_class=5
 batch_size=64
 lr=1e-3
-epochs=30
+# epochs=20
+# epochs_feature_extraction=5
+# epochs_fine_tuning=15
+epochs=10
 epochs_feature_extraction=5
-epochs_fine_tuning=45
+epochs_fine_tuning=5
 momentum=0.9
 weight_decay_feature_extraction=5e-4
 weight_decay_finetuning=5e-4
-Loss=nn.CrossEntropyLoss(weight=torch.Tensor([1.0,10.565217391304348,4.906175771971497,29.591690544412607,35.55077452667814]).to(device))
+Loss=nn.CrossEntropyLoss()
 
 dataset_train=RetinopathyDataSet(img_path='data',mode='train')
 loader_train=DataLoader(dataset=dataset_train,batch_size=batch_size,shuffle=True,num_workers=4)
+
 dataset_test=RetinopathyDataSet(img_path='data',mode='test')
 loader_test=DataLoader(dataset=dataset_test,batch_size=batch_size,shuffle=False,num_workers=4)
 
@@ -249,6 +250,7 @@ resnet18 with pretrained weights
     feature extraction for few epochs, then finefuning for some epochs
 """
 model_with=ResNet18(num_class=num_class,pretrained=True)
+model_with.load_state_dict(torch.load("models/resnet18_with_pretraining.pt"))
 # feature extraction
 params_to_update=[]
 for name,param in model_with.named_parameters():
@@ -263,16 +265,15 @@ optimizer=optim.SGD(model_with.parameters(),lr=lr,momentum=momentum,weight_decay
 df_secondstep=train(model_with,loader_train,loader_test,Loss,optimizer,epochs_fine_tuning,device,num_class,'resnet18_with_pretraining')
 df_with_pretrained=pd.concat([df_firststep,df_secondstep],axis=0,ignore_index=True)
 
-# test and get a confusion matrix
-confusion_matrix,_=evaluate(model_with,loader_test,device,num_class)
-figure=plot_confusion_matrix(confusion_matrix)
-figure.savefig('ResNet18 (with pretrained weights).png')
+# # test and get a confusion matrix
+# confusion_matrix,_=evaluate(model_with,loader_test,device,num_class)
+# figure=plot_confusion_matrix(confusion_matrix)
+# figure.savefig('ResNet18 (with pretrained weights).png')
 
-"""
-plot accuracy figure
-"""
-figure=plot(df_with_pretrained,'Result Comparison(ResNet18)')
-figure.savefig('Result Comparison(ResNet18).png')
-
+# """
+# plot accuracy figure
+# """
+# figure=plot(df_with_pretrained,'Result Comparison(ResNet18)')
+# figure.savefig('Result Comparison(ResNet18).png')
 
 print(df_with_pretrained)

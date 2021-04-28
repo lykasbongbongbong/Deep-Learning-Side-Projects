@@ -30,40 +30,21 @@ class RetinopathyLoader(data.Dataset):
             self.label (int or float list): 存mode下所有image的label (list)
         """
         self.root = root
-        self.img_name, self.label = getData(mode)
+        self.all_image, self.all_labels = getData(mode)
         self.mode = mode
-        print("> Found %d images..." % (len(self.img_name)))
+        print("> Found %d images..." % (len(self.all_image)))
 
     def __len__(self):
         """'return the size of dataset"""
-        return len(self.img_name)
+        return len(self.all_image)
 
     def __getitem__(self, index):
         # support the indexing such taht dataset[i] can be used to get i-th sample
-        """something you should implement here"""
-
-        """
-           step1. Get the image path from 'self.img_name' and load it.
-                  hint : path = root + self.img_name[index] + '.jpeg'
-
-           step2. Get the ground truth label from self.label
-                     
-           step3. Transform the .jpeg rgb images during the training phase, such as resizing, random flipping, 
-                  rotation, cropping, normalization etc. But at the beginning, I suggest you follow the hints. 
-                       
-                  In the testing phase, if you have a normalization process during the training phase, you only need 
-                  to normalize the data. 
-                  
-                  hints : Convert the pixel value to [0, 1]
-                          Transpose the image shape from [H, W, C] to [C, H, W]
-                         
-            step4. Return processed image and label
-        """
-        path = os.path.join(self.root, self.img_name[index]+".jpeg")
-        img = Image.open(path)
-        label = self.label[index]
+        single_img_path = os.path.join(self.root, self.all_image[index]+".jpeg")
+        single_image = Image.open(single_img_path)
+        single_image_label = self.all_labels[index]
         tran = transforms.Compose([transforms.RandomHorizontalFlip(),transforms.RandomVerticalFlip(),transforms.ToTensor(), transforms.Normalize((0.3749, 0.2602, 0.1857),(0.2526, 0.1780, 0.1291))])
-        img = tran(img)
+        single_image_transformed = tran(single_image)
 
-        return img, label
+        return single_image_transformed, single_image_label
 

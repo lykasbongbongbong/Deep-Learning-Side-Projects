@@ -13,7 +13,6 @@ from torch.autograd.function import once_differentiable
 import time
 import functools
 
-
 class ResNet(nn.Module):
     def __init__(self, pretrained=True):
         super(ResNet, self).__init__()
@@ -53,18 +52,20 @@ class ResNet(nn.Module):
 
         return x
 
-
 class ResNet18(nn.Module):
-    def __init__(self, num_class, pretrained=False):
-        super(ResNet18, self).__init__
+    def __init__(self, classes, pretrained=True):
+        super(ResNet18, self).__init__()
         self.model = models.resnet18(pretrained=pretrained)
-        if pretrained:
+        #如果是用已經pretrained過的weight, 參數就不要更新
+        if pretrained == True:
             for param in self.model.parameters():
-                param.requires_grad=False
-        num_neurons = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_neurons, num_classes)
+                param.requires_grad = False
+        in_features = self.model.fc.in_features
+        #最後輸出5個class
+        self.model.fc = nn.Linear(in_features, classes)
     
-    def forward(self, X):
-        out = self.model(X)
+    def forward(self, x):
+        out = self.model(x)
         return out
 
+    
