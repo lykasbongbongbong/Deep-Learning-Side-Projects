@@ -250,7 +250,7 @@ resnet18 with pretrained weights
     feature extraction for few epochs, then finefuning for some epochs
 """
 model_with=ResNet18(num_class=num_class,pretrained=True)
-model_with.load_state_dict(torch.load("models/resnet18_with_pretraining.pt"))
+# model_with.load_state_dict(torch.load("models/resnet18_with_pretraining.pt"))
 # feature extraction
 params_to_update=[]
 for name,param in model_with.named_parameters():

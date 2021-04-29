@@ -56,7 +56,7 @@ class ResNet(nn.Module):
 
 class ResNet18(nn.Module):
     def __init__(self, num_class, pretrained=False):
-        super(ResNet18, self).__init__
+        super(ResNet18, self).__init__()
         self.model = models.resnet18(pretrained=pretrained)
         if pretrained:
             for param in self.model.parameters():
