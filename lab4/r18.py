@@ -136,8 +136,9 @@ def resnet_18_without_pretrained():
     best_model = None
     accuracy_train = list()
     accuracy_test = list()
+    model.train()
+    optimizer.zero_grad()
     for epoch in range(1, epochs+1):
-        model.train()
         train_acc = 0. 
         total_loss = 0. 
         for images, labels in train_loader:
@@ -183,6 +184,7 @@ def resnet_18_without_pretrained():
            
 
 if __name__ == '__main__':
+    torch.cuda.empty_cache()
     # print("---ResNet18 with pretrained---")
     # resnet_18_with_pretrained()
     print("---ResNet18 without pretrained---")

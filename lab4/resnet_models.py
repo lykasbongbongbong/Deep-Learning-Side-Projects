@@ -53,7 +53,7 @@ class ResNet(nn.Module):
         return x
 
 class ResNet18(nn.Module):
-    def __init__(self, classes, pretrained=True):
+    def __init__(self, classes, pretrained=False):
         super(ResNet18, self).__init__()
         self.model = models.resnet18(pretrained=pretrained)
         #如果是用已經pretrained過的weight, 參數就不要更新
