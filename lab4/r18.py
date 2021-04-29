@@ -8,6 +8,7 @@ import torch.nn as nn
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(device)
 def train_eval(model, train_loader, test_loader, epochs, optimizer):
     batch_size = 64
     lr = 1e-3
@@ -23,6 +24,7 @@ def train_eval(model, train_loader, test_loader, epochs, optimizer):
     test_accuracy = list() 
     for epoch in range(1, epochs+1):
         #train
+        print(f"---Training---")
         with torch.set_grad_enabled(True):
             model.train()
             total_loss = 0
@@ -44,6 +46,7 @@ def train_eval(model, train_loader, test_loader, epochs, optimizer):
             print(f"[Training] Epoch {epoch} loss:{total_loss:.4f} acc:{acc:.4f}")
         #eval
         with torch.set_grad_enabled(False):
+            print(f"---Evaluating---")
             model.eval()
             cor = 0
             acc = 0.
@@ -60,6 +63,7 @@ def train_eval(model, train_loader, test_loader, epochs, optimizer):
             print(f"[Testing] Epoch {epoch}  acc:{acc:.4f}")
     dataframe['train_accuracy'] = train_accuracy
     dataframe['test_accuracy'] = test_accuracy
+    print(f"---Saving Model's weight---")
     torch.save(best_model, "weights/resnet18_with_pretrained.weight")
 
     return dataframe
@@ -70,8 +74,9 @@ def resnet_18_with_pretrained():
     lr = 1e-3
     momentum = 0.9
     Loss = nn.CrossEntropyLoss()
-    epochs_feature_extraction = 4
-    epochs_fine_tuning = 5
+    epochs_feature_extraction = 1
+    epochs_fine_tuning = 1
+    weight_path = "weights/resnet18_with_pretrained.weight"
 
     trainset = RetinopathyLoader(root="data", mode="train")
     testset = RetinopathyLoader(root="data", mode="test")
@@ -79,9 +84,11 @@ def resnet_18_with_pretrained():
     test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False)
 
     model = ResNet18(classes=5 ,pretrained=True)
-    # model.load_state_dict(torch.load("weights/resnet18_pretrained.weight"))
+    # model.load_state_dict(torch.load(weight_path))
+    print(f"---Model loads pretrained weight from {weight_path}---")
     
     #feature extraction
+    print(f"---Start feature extraction for {epochs_feature_extraction} epochs.---")
     params_to_update = list()
     for name, param in model.named_parameters():
         if param.requires_grad:
@@ -90,6 +97,7 @@ def resnet_18_with_pretrained():
     dataframe_feature_extraction = train_eval(model, train_loader, test_loader, epochs_feature_extraction, optimizer)
 
     #fine tune
+    print(f"---Start fine tuning for {epochs_fine_tuning} epochs.---")
     for param in model.parameters():
         param.requires_grad=True
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=5e-4)
@@ -161,5 +169,6 @@ def resnet_18_without_pretrained():
            
 
 if __name__ == '__main__':
+    
     resnet_18_with_pretrained()
     # resnet_18_without_pretrained()
