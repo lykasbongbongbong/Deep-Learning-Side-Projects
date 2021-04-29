@@ -131,6 +131,7 @@ dmypy.json
 
 #dataset
 data/
+weights/
 *.zip
 *.png
 *.jpg
