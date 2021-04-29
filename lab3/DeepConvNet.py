@@ -109,8 +109,13 @@ def main():
                 print(f"[Testing] loss:{total_loss:.4f} accuracy:{acc:.1f}")
 
     # print(f"Best Training Accuracy: {best_training_accuracy}")
+<<<<<<< HEAD
+    print(f"\n\nBest Testing Accuracy: {best_accuracy}")
+    print(f"Best Activation Function: {best_activation}\n\n")
+=======
     print(f"\n\nBest Activation Function: {best_activation}")
     print(f"Best Testing Accuracy: {best_accuracy:.4f}\n\n")
+>>>>>>> 1e52104ceb2a5b897740e424e4fcb5b70d1c2d8e
 
         
     weight_name = "weight/DeepConvNet.weight"
