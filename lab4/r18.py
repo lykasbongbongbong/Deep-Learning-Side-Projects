@@ -17,7 +17,7 @@ def train_eval(model, train_loader, test_loader, epochs, optimizer):
 
     dataframe = pd.DataFrame()
     best_accuracy = 0. 
-    best_weight = dict()
+    best_model = None
 
     model.to(device)
     train_accuracy = list()
@@ -74,8 +74,8 @@ def resnet_18_with_pretrained():
     lr = 1e-3
     momentum = 0.9
     Loss = nn.CrossEntropyLoss()
-    epochs_feature_extraction = 1
-    epochs_fine_tuning = 1
+    epochs_feature_extraction = 5
+    epochs_fine_tuning = 5
     weight_path = "weights/resnet18_with_pretrained.weight"
 
     trainset = RetinopathyLoader(root="data", mode="train")
@@ -84,8 +84,9 @@ def resnet_18_with_pretrained():
     test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False)
 
     model = ResNet18(classes=5 ,pretrained=True)
-    # model.load_state_dict(torch.load(weight_path))
-    print(f"---Model loads pretrained weight from {weight_path}---")
+    model.to(device)
+    # model.load_state_dict(torch.load("weights/resnet18_with_pretrained.weight"))
+    # print(f"---Model loads pretrained weight from {weight_path}---")
     
     #feature extraction
     print(f"---Start feature extraction for {epochs_feature_extraction} epochs.---")
@@ -95,6 +96,8 @@ def resnet_18_with_pretrained():
             params_to_update.append(param)
     optimizer = SGD(params_to_update, lr=lr, momentum=momentum, weight_decay=5e-4)
     dataframe_feature_extraction = train_eval(model, train_loader, test_loader, epochs_feature_extraction, optimizer)
+    dataframe_feature_extraction.to_csv("r18_with_pretrained_accuracy_feature_extraction.csv", index=False)
+    print(dataframe_feature_extraction)
 
     #fine tune
     print(f"---Start fine tuning for {epochs_fine_tuning} epochs.---")
@@ -102,13 +105,18 @@ def resnet_18_with_pretrained():
         param.requires_grad=True
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=5e-4)
     dataframe_fine_tuning = train_eval(model, train_loader, test_loader, epochs_fine_tuning, optimizer)
+    dataframe_fine_tuning.to_csv("r18_with_pretrained_accuracy_fine_tuning.csv", index=False)
+    print(dataframe_fine_tuning)
+
     
     dataframe_ff = pd.concat([dataframe_feature_extraction, dataframe_fine_tuning], axis=0, ignore_index=True)
     print(dataframe_ff)
+    dataframe_ff.to_csv("r18_with_pretrained_accuracy.csv", index=False)
+    
 def resnet_18_without_pretrained():
      #hyper param:
-    batch_size = 64
-    epochs = 2
+    batch_size = 16
+    epochs = 10
     lr = 1e-3
     momentum = 0.9
     Loss = nn.CrossEntropyLoss()
@@ -118,22 +126,22 @@ def resnet_18_without_pretrained():
     train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False)
 
-    model = ResNet18(classes=5 ,pretrained=True)
-    # model.load_state_dict(torch.load("models/resnet18_with_pretraining_81.pt"))
-    model.to(device)
-    
+  
     dataframe = pd.DataFrame()
 
     model = ResNet18(classes=5, pretrained=False)
     model.to(device)
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=5e-4)
-
+    best_acc = 0.
+    best_model = None
+    accuracy_train = list()
+    accuracy_test = list()
     for epoch in range(1, epochs+1):
         model.train()
-        optimizer.zero_grad()
         train_acc = 0. 
         total_loss = 0. 
         for images, labels in train_loader:
+            optimizer.zero_grad()
             images = images.to(device)
             labels = labels.to(device)
             pred = model(images)
@@ -144,31 +152,38 @@ def resnet_18_without_pretrained():
             optimizer.step()
         total_loss /= len(train_loader.dataset)
         train_acc = 100.*train_acc/len(train_loader.dataset)
+        accuracy_train.append(train_acc)
         print(f"[Training]Epoch: {epoch} loss:{total_loss}, acc: {train_acc}")
         
         model.eval()
         test_acc = 0.
-        total_loss = 0. 
         for images, labels in test_loader:
             images = images.to(device)
             labels = labels.to(device)
             pred = model(images)
             test_acc += pred.max(dim=1)[1].eq(labels).sum().item()
-        total_loss /= len(test_loader.dataset)
         test_acc = 100.*test_acc/len(test_loader.dataset)
+        accuracy_test.append(test_acc)
         if test_acc > best_acc:
             best_acc = test_acc 
             best_model = model.state_dict()
         print(f"[Testing]Epoch: {epoch} acc: {test_acc}")
-    dataframe['acc_train'] = train_acc
-    dataframe['acc_test'] = test_acc
+    dataframe['acc_train'] = accuracy_train
+    dataframe['acc_test'] = accuracy_test
 
     print("---ResNet18 without pretrained weight---")
     print(dataframe)
-    torch.save(best_weight, "weights/resnet18_without_pretrained.weight")
+    dataframe.to_csv("r18_without_pretrained_accuracy.csv", index=False)
+
+    torch.save(best_model, "weights/resnet18_without_pretrained.weight")
+
+
+    
+    
            
 
 if __name__ == '__main__':
-    
-    resnet_18_with_pretrained()
-    # resnet_18_without_pretrained()
+    # print("---ResNet18 with pretrained---")
+    # resnet_18_with_pretrained()
+    print("---ResNet18 without pretrained---")
+    resnet_18_without_pretrained()
