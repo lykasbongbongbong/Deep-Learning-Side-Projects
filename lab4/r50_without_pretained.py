@@ -7,9 +7,9 @@ from utils.common import train_eval
 import torch 
 def r50_without_pretrained():
     #hyper param: 
-    batch_size = 16 
+    batch_size = 8
     classes = 5 
-    epochs = 1
+    epochs = 10
     Loss = nn.CrossEntropyLoss()
     lr = 1e-3
     momentum = 0.9
