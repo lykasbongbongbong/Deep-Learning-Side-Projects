@@ -6,6 +6,7 @@ import pandas as pd
 from torch.optim import SGD
 import torch.nn as nn
 from utils.common import train_eval
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
                 
 def resnet_18_without_pretrained():

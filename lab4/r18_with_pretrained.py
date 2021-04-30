@@ -1,3 +1,12 @@
+from dataloader import RetinopathyLoader
+from torch.utils.data import DataLoader
+from resnet_models import ResNet18
+import torch 
+import pandas as pd
+from torch.optim import SGD
+import torch.nn as nn
+from utils.common import train_eval
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def resnet_18_with_pretrained():
     #hyper param:
     batch_size = 64
@@ -6,7 +15,7 @@ def resnet_18_with_pretrained():
     Loss = nn.CrossEntropyLoss()
     epochs_feature_extraction = 5
     epochs_fine_tuning = 5
-    weight_path = "weights/resnet18_with_pretrained.weight"
+    weight_name = "weights/resnet18_with_pretrained.weight"
 
     trainset = RetinopathyLoader(root="data", mode="train")
     testset = RetinopathyLoader(root="data", mode="test")
@@ -14,9 +23,7 @@ def resnet_18_with_pretrained():
     test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False)
 
     model = ResNet18(classes=5 ,pretrained=True)
-    model.to(device)
-    # model.load_state_dict(torch.load("weights/resnet18_with_pretrained.weight"))
-    # print(f"---Model loads pretrained weight from {weight_path}---")
+    
     
     #feature extraction
     print(f"---Start feature extraction for {epochs_feature_extraction} epochs.---")
@@ -25,20 +32,24 @@ def resnet_18_with_pretrained():
         if param.requires_grad:
             params_to_update.append(param)
     optimizer = SGD(params_to_update, lr=lr, momentum=momentum, weight_decay=5e-4)
-    dataframe_feature_extraction = train_eval(model, train_loader, test_loader, epochs_feature_extraction, optimizer)
-    dataframe_feature_extraction.to_csv("r18_with_pretrained_accuracy_feature_extraction.csv", index=False)
-    print(dataframe_feature_extraction)
+    train_eval_result_fe = train_eval(model, train_loader, test_loader, epochs_feature_extraction, Loss, optimizer, device, weight_name)
+    train_eval_result_fe.to_csv("result/r18_with_pretrained_accuracy_feature_extraction.csv", index=False)
+    print(train_eval_result_fe)
 
     #fine tune
     print(f"---Start fine tuning for {epochs_fine_tuning} epochs.---")
     for param in model.parameters():
         param.requires_grad=True
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=5e-4)
-    dataframe_fine_tuning = train_eval(model, train_loader, test_loader, epochs_fine_tuning, optimizer)
-    dataframe_fine_tuning.to_csv("r18_with_pretrained_accuracy_fine_tuning.csv", index=False)
-    print(dataframe_fine_tuning)
+    train_eval_result_ft = train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device, weight_name)
+    train_eval_result_ft.to_csv("r18_with_pretrained_accuracy_fine_tuning.csv", index=False)
+    print(train_eval_result_ft)
 
     
-    dataframe_ff = pd.concat([dataframe_feature_extraction, dataframe_fine_tuning], axis=0, ignore_index=True)
-    print(dataframe_ff)
-    dataframe_ff.to_csv("r18_with_pretrained_accuracy.csv", index=False)
+    frames = [train_eval_result_fe, train_eval_result_ft]
+    train_eval_result = pd.concat(frames)
+    print(train_eval_result)
+    train_eval_result.to_csv("resnet18_with_pretrained_accuracy.csv", index=False)
+
+if __name__ == '__main__':
+    resnet_18_with_pretrained()
