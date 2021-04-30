@@ -21,7 +21,7 @@ def train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device
     total_train_accuracy = list()
     total_test_accuracy = list()
     best_acc = 0.
-
+    best_model = None
     for epoch in tqdm(range(1, epochs+1)):
         #train
         model.train()
