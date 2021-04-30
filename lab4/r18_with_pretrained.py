@@ -42,14 +42,14 @@ def resnet_18_with_pretrained():
         param.requires_grad=True
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=5e-4)
     train_eval_result_ft = train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device, weight_name)
-    train_eval_result_ft.to_csv("r18_with_pretrained_accuracy_fine_tuning.csv", index=False)
+    train_eval_result_ft.to_csv("result/r18_with_pretrained_accuracy_fine_tuning.csv", index=False)
     print(train_eval_result_ft)
 
     
     frames = [train_eval_result_fe, train_eval_result_ft]
     train_eval_result = pd.concat(frames)
     print(train_eval_result)
-    train_eval_result.to_csv("resnet18_with_pretrained_accuracy.csv", index=False)
+    train_eval_result.to_csv("result/resnet18_with_pretrained_accuracy.csv", index=False)
 
 if __name__ == '__main__':
     resnet_18_with_pretrained()
