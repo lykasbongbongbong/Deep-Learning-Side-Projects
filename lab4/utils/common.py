@@ -1,6 +1,18 @@
 import pandas as pd
 import torch
 from tqdm import tqdm
+def set_parameter_requires_grad(model, mode):
+    '''
+    mode: feature_extracting / fine_tuning
+    '''
+    if mode == "feature_extracting":
+        for param in model.parameters():
+            param.requires_grad = False
+    elif mode == "fine_tuning":
+        for param in model.parameters():
+            param.requires_grad = True
+
+            
 def train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device):
     model.to(device)
 
