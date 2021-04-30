@@ -27,7 +27,7 @@ def resnet_18_without_pretrained():
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=5e-4)
     train_eval_result = train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device, weight_name)
     train_eval_result.to_csv("result/resnet18_without_pretrained_accuracy.csv", index=False)
-
+    print(train_eval_result)
 
 if __name__ == '__main__':
     resnet_18_without_pretrained()
