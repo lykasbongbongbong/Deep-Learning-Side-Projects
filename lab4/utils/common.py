@@ -12,8 +12,8 @@ def set_parameter_requires_grad(model, mode):
         for param in model.parameters():
             param.requires_grad = True
 
-            
-def train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device):
+
+def train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device, weight_name):
     model.to(device)
 
     dataframe = pd.DataFrame()
@@ -82,7 +82,7 @@ def train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device
             if test_epoch_acc > best_acc: 
                 best_acc = test_epoch_acc
                 best_model = model.state_dict()
-    torch.save(best_model, "weights/r50_without_pretrained.weight")
+    torch.save(best_model, weight_name)
 
     dataframe['train_accuracy'] = total_train_accuracy
     dataframe['test_accuracy'] = total_test_accuracy

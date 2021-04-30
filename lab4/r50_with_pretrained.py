@@ -18,6 +18,8 @@ def r50_with_pretained():
     weight_decay = 1e-3
     epochs_feature_extraction = 10
     epochs_fine_tune = 30
+    weight_name = "weights/resnet50_with_pretrained.weight"
+
 
     #load data
     trainset = RetinopathyLoader(root="data", mode="train")
@@ -38,19 +40,20 @@ def r50_with_pretained():
             #print(layer_name) 只有fc
             param_to_update.append(layer_param) 
     
-    
     optimizer = SGD(param_to_update, lr=lr, momentum=momentum, weight_decay=weight_decay)
-    train_eval_result_fe = train_eval(model, train_loader, test_loader, epochs_feature_extraction, Loss, optimizer, device)
+    train_eval_result_fe = train_eval(model, train_loader, test_loader, epochs_feature_extraction, Loss, optimizer, device, weight_name)
     print(train_eval_result_fe)
 
     set_parameter_requires_grad(model, "fine_tuning")
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
-    train_eval_result_ft = train_eval(model, train_loader, test_loader, epochs_fine_tune, Loss, optimizer, device)
+    train_eval_result_ft = train_eval(model, train_loader, test_loader, epochs_fine_tune, Loss, optimizer, device, weight_name)
     print(train_eval_result_ft)
 
     frames = [train_eval_result_fe, train_eval_result_ft]
     train_eval_result = pd.concat(frames)
     print(train_eval_result)
+
+    train_eval_result.to_csv("result/r50_with_pretrained.csv")
 
 
 

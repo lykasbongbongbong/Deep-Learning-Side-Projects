@@ -14,7 +14,8 @@ def r50_without_pretrained():
     lr = 1e-3
     momentum = 0.9
     weight_decay = 5e-4    
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
+    weight_name = "weights/resnet50_without_pretrained.weight"   
 
     #load data
     trainset = RetinopathyLoader(root="data", mode="train")
@@ -26,7 +27,7 @@ def r50_without_pretrained():
     model = ResNet50(classes=classes, pretrained=False)
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
 
-    train_eval_result = train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device)
+    train_eval_result = train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device, weight_name)
     print("---Train and Eval Result---")
     print(train_eval_result)
     
