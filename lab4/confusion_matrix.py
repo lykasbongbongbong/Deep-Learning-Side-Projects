@@ -1,13 +1,15 @@
-from dataloader import RetinopathyLoader 
+from utils.dataloader import RetinopathyLoader 
 from torch.utils.data import DataLoader 
-from resnet_models import ResNet18 
+from models.resnet_models import ResNet50, ResNet18
 import numpy as np
 import torch 
 import matplotlib.pyplot as plt
 from functools import reduce 
+from tqdm import tqdm 
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def evaluate():
-    batch_size = 64
+    batch_size = 16
 
     #load data
     testset = RetinopathyLoader(root="data", mode="test")
@@ -15,7 +17,7 @@ def evaluate():
     
     #testing
     model = ResNet18(classes=5, pretrained=True)
-    model.load_state_dict(torch.load("weights/resnet18_with_pretrained.weight"))
+    model.load_state_dict(torch.load("weights/resnet18_without_pretrained.weight"))
     model.to(device)
 
     model.eval()
@@ -23,7 +25,7 @@ def evaluate():
     confusion_matrix=np.zeros((5,5))
 
     y_pred = list()
-    for images, labels in test_loader:
+    for images, labels in tqdm(test_loader):
         images = images.to(device)
         labels = labels.to(device)
         pred = model(images)
@@ -41,7 +43,7 @@ def evaluate():
     y_pred = reduce(lambda x,y :x+y ,y_pred)
     print(len(y_pred))
    
-    with open("y_pred.csv", "w") as file:
+    with open("confusion_matrix_source/resnet18_without_pretrained_pred_class.csv", "w") as file:
         for ele in y_pred:
             file.write(str(ele)+"\n")
     

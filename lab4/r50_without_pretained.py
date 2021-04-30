@@ -1,6 +1,6 @@
 from utils.dataloader import RetinopathyLoader
 from torch.utils.data import DataLoader 
-from resnet_models import ResNet50
+from models.resnet_models import ResNet50
 import torch.nn as nn
 from torch.optim import SGD
 from utils.common import train_eval
