@@ -1,4 +1,4 @@
-from dataloader import RetinopathyLoader
+from utils.dataloader import RetinopathyLoader
 from torch.utils.data import DataLoader 
 from resnet_models import ResNet50
 import torch.nn as nn
@@ -25,7 +25,6 @@ def r50_without_pretrained():
     #model
     model = ResNet50(classes=classes, pretrained=False)
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
-    model.to(device)
 
     train_eval_result = train_eval(model, train_loader, test_loader, epochs, Loss, optimizer, device)
     print("---Train and Eval Result---")
