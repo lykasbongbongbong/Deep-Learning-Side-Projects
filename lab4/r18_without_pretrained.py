@@ -1,6 +1,6 @@
 from utils.dataloader import RetinopathyLoader
 from torch.utils.data import DataLoader
-from resnet_models import ResNet18
+from models.resnet_models import ResNet18
 import torch 
 import pandas as pd
 from torch.optim import SGD
