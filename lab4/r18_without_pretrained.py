@@ -1,4 +1,4 @@
-from dataloader import RetinopathyLoader
+from utils.dataloader import RetinopathyLoader
 from torch.utils.data import DataLoader
 from resnet_models import ResNet18
 import torch 
