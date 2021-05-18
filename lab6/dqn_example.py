@@ -11,8 +11,9 @@ import gym
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-
+import tqdm as tqdm
 
 class ReplayMemory:
     __slots__ = ['buffer']
@@ -36,13 +37,21 @@ class ReplayMemory:
 
 class Net(nn.Module):
     def __init__(self, state_dim=8, action_dim=4, hidden_dim=32):
-        super().__init__()
-        ## TODO ##
-        raise NotImplementedError
+        super(Net,self).__init__()
+        ## TODO: OK ##
+        self.net = nn.Sequential(
+            nn.Linear(in_features=state_dim, out_features=400),
+            nn.ReLU(),
+            nn.Linear(in_features=400, out_features=300),
+            nn.ReLU(),
+            nn.Linear(in_features=300, out_features=action_dim)
+        )
 
     def forward(self, x):
         ## TODO ##
-        raise NotImplementedError
+        out = self.net(x)
+        return out
+        # raise NotImplementedError
 
 
 class DQN:
@@ -52,8 +61,7 @@ class DQN:
         # initialize target network
         self._target_net.load_state_dict(self._behavior_net.state_dict())
         ## TODO ##
-        # self._optimizer = ?
-        raise NotImplementedError
+        self._optimizer = optim.Adam(self._behavior_net.parameters(), lr=args.lr)
         # memory
         self._memory = ReplayMemory(capacity=args.capacity)
 
@@ -66,8 +74,22 @@ class DQN:
 
     def select_action(self, state, epsilon, action_space):
         '''epsilon-greedy based on behavior network'''
-         ## TODO ##
-        raise NotImplementedError
+        ## TODO ##
+        if np.random.uniform() < epsilon:
+            # < epsilon : 從action_space 隨機 sample
+            action = action_space.sample()
+        else:
+            with torch.no_grad():
+                # 挑最大qvalue的action
+                current_state = torch.from_numpy(state)
+                current_state = current_state.view(1,8).to(self.device)
+                all_qvalues = self._behavior_net(current_state)
+                action = torch.argmax(all_qvalues).item()
+                
+        
+        return action 
+
+
 
     def append(self, state, action, reward, next_state, done):
         self._memory.append(state, [action], [reward / 10], next_state,
@@ -85,13 +107,14 @@ class DQN:
             self.batch_size, self.device)
 
         ## TODO ##
-        # q_value = ?
-        # with torch.no_grad():
-        #    q_next = ?
-        #    q_target = ?
-        # criterion = ?
-        # loss = criterion(q_value, q_target)
-        raise NotImplementedError
+
+        q_value = self._behavior_net(state).gather(dim=1,index=action.long())
+        with torch.no_grad():
+           q_next = self._target_net(next_state).max(dim=1)[0].view(-1,1)
+           q_target = reward + gamma*q_next*(1-done)
+        criterion = nn.MSELoss()
+        loss = criterion(q_value, q_target)
+
         # optimize
         self._optimizer.zero_grad()
         loss.backward()
@@ -101,7 +124,8 @@ class DQN:
     def _update_target_network(self):
         '''update target network by copying from behavior network'''
         ## TODO ##
-        raise NotImplementedError
+        self._target_net.load_state_dict(self._behavior_net.state_dict())
+        # raise NotImplementedError
 
     def save(self, model_path, checkpoint=False):
         if checkpoint:
@@ -132,7 +156,7 @@ def train(args, env, agent, writer):
     epsilon = 1.
     ewma_reward = 0
 
-    for episode in range(args.episode):
+    for episode in tqdm.tqdm(range(args.episode)):
         total_reward = 0
 
         state = env.reset()  # initial observation 初始狀態
@@ -141,8 +165,13 @@ def train(args, env, agent, writer):
             # select action
             if total_steps < args.warmup:
                 # 因為在>warmup的step才會開始學，所以這邊先直接用sample的
-                action = action_space.sample()
-                print(f"---Action before warmup: {action}---")
+                ###### Actions
+                # 1: No-op
+                # 2: fire left engine
+                # 3: fire main engine
+                # 4: fire right engine
+                ######
+                action = action_space.sample()  # ex. 1
             else:
                 # 根據觀測值選一個action (forward propagation 得到q值來選)
                 action = agent.select_action(state, epsilon, action_space) 
@@ -189,7 +218,7 @@ def test(args, env, agent, writer):
         #     if done:
         #         writer.add_scalar('Test/Episode Reward', total_reward, n_episode)
         #         ...
-        raise NotImplementedError
+        # raise NotImplementedError
     print('Average Reward', np.mean(rewards))
     env.close()
 
@@ -210,7 +239,7 @@ def main():
     parser.add_argument('--eps_min', default=.01, type=float)
     parser.add_argument('--gamma', default=.99, type=float)
     parser.add_argument('--freq', default=4, type=int)
-    parser.add_argument('--target_freq', default=1000, type=int)
+    parser.add_argument('--target_freq', default=1000, type=int) 
     # test
     parser.add_argument('--test_only', action='store_true')
     parser.add_argument('--render', action='store_true')
@@ -226,7 +255,7 @@ def main():
         train(args, env, agent, writer)
         agent.save(args.model)
     agent.load(args.model)
-    test(args, env, agent, writer)
+    # test(args, env, agent, writer)
 
 
 if __name__ == '__main__':
