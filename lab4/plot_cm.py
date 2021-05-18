@@ -19,7 +19,7 @@ y_true = list()
 
 with open("test_label.csv", "r") as file:
     y_true = file.read().splitlines()
-print(len(y_true))
+
 
 y_true = y_true[1:]
 
@@ -29,9 +29,9 @@ y_true = y_true[1:]
 
 y_pred = list()
 
-with open("confusion_matrix_source/resnet50_without_pretrained_pred_class.csv", "r") as file:
+with open("confusion_matrix_source/resnet50_with_pretrained_pred_class.csv", "r") as file:
     y_pred = file.read().splitlines()
-print(len(y_pred))
+
 
 
 
@@ -86,11 +86,12 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.tight_layout()
+    
 
 
 # In[23]:
 
 
 plt.figure()
-plot_confusion_matrix(cm, classes=["0", "1", "2", "3", "4"], normalize=True, title="ResNet50 without pretrained")
-plt.show()
+plot_confusion_matrix(cm, classes=["0", "1", "2", "3", "4"], normalize=True, title="ResNet50 with pretrained")
+plt.savefig("confusion_matrix_res50_pretrained.png")

@@ -17,7 +17,7 @@ def evaluate():
     
     #testing
     model = ResNet18(classes=5, pretrained=True)
-    model.load_state_dict(torch.load("weights/resnet18_without_pretrained.weight"))
+    model.load_state_dict(torch.load("weights/resnet50_with_pretrained.weight"))
     model.to(device)
 
     model.eval()
