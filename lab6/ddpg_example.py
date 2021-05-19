@@ -116,6 +116,7 @@ class DDPG:
         ## TODO ##
         with torch.no_grad():
             if noise:
+                # re = self._actor_net(torch.from_numpy(state).view(1,-1).to(self.device))+torch.from_numpy(self._action_noise.sample()).view(1,-1).to(self.device)
                 current_state = torch.from_numpy(state)
                 current_state = current_state.reshape(1, 8).to(self.device)
                 qvalue = self._actor_net(current_state)
@@ -184,6 +185,7 @@ class DDPG:
     def _update_target_network(target_net, net, tau):
         '''update target network by _soft_ copying from behavior network'''
         for target, behavior in zip(target_net.parameters(), net.parameters()):
+            ## TODO ## 
             target.data.copy_((1-tau)*target.data + tau*behavior.data)
 
     def save(self, model_path, checkpoint=False):
@@ -261,11 +263,16 @@ def test(args, env, agent, writer):
         env.seed(seed)
         state = env.reset()
         ## TODO ##
-        # ...
-        #     if done:
-        #         writer.add_scalar('Test/Episode Reward', total_reward, n_episode)
-        #         ...
-        raise NotImplementedError
+        for t in itertools.count(start=1):
+            action = agent.select_action(state)
+            next_state, reward, done, _ = env.step(action)
+            state = next_state
+            total_reward += reward 
+            if done: 
+                print(f"Total Reward: {total_reward}")
+                rewards.append(total_reward)
+                break
+        
     print('Average Reward', np.mean(rewards))
     env.close()
 
@@ -278,7 +285,7 @@ def main():
     parser.add_argument('--logdir', default='log/ddpg')
     # train
     parser.add_argument('--warmup', default=10000, type=int)
-    parser.add_argument('--episode', default=1200, type=int)
+    parser.add_argument('--episode', default=2000, type=int)
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--capacity', default=500000, type=int)
     parser.add_argument('--lra', default=1e-3, type=float)
@@ -299,7 +306,7 @@ def main():
         train(args, env, agent, writer)
         agent.save(args.model)
     agent.load(args.model)
-    # test(args, env, agent, writer)
+    test(args, env, agent, writer)
 
 
 if __name__ == '__main__':

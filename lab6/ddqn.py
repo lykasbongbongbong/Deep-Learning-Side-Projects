@@ -108,15 +108,17 @@ class DQN:
 
         # 拿A當前的state 用predict出來的action 算一次qvalue
         
-        q_value = self._behavior_net(state)#橫的取，取對應action的value
-        q_value = torch.gather(q_value, 1, action.long())
+        q_value = self._behavior_net(state).gather(dim=1, index=action.long())#橫的取，取對應action的value
+        # q_value = torch.gather(q_value, 1, action.long())
       
         with torch.no_grad():
-            next_qvalue = self._target_net(next_state)
-            max_next_qvalue = next_qvalue.max(dim=1)[0]  # 1*nA
-            max_next_qvalue = max_next_qvalue.reshape(-1 ,1)
+            action_index = self._behavior_net(next_state).max(dim=1)[1].view(-1, 1)
+            next_qvalue = self._target_net(next_state).gather(dim=1, index=action_index.long())
+            # next_qvalue = self._target_net(next_state)
+            # max_next_qvalue = next_qvalue.max(dim=1)[0]  # 1*nA
+            # max_next_qvalue = max_next_qvalue.reshape(-1 ,1)
 
-            q_target = reward + gamma * max_next_qvalue * (1-done)
+            q_target = reward + gamma * next_qvalue * (1-done)
             
         criterion = nn.MSELoss()
         loss = criterion(q_value, q_target)
