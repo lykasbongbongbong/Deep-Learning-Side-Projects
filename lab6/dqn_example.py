@@ -81,12 +81,10 @@ class DQN:
         else:
             with torch.no_grad():
                 # 挑最大qvalue的action
-                current_state = torch.from_numpy(state)
-                current_state = current_state.view(1,8).to(self.device)
+                current_state = torch.from_numpy(state).view(1,8).to(self.device)
                 all_qvalues = self._behavior_net(current_state)
                 action = torch.argmax(all_qvalues).item()
-                
-        
+
         return action 
 
 
@@ -108,12 +106,20 @@ class DQN:
 
         ## TODO ##
 
-        q_value = self._behavior_net(state).gather(dim=1,index=action.long())
+        # 拿A當前的state 用predict出來的action 算一次qvalue
+        
+        q_value = self._behavior_net(state)#橫的取，取對應action的value
+        q_value = torch.gather(q_value, 1, action.long())
+      
         with torch.no_grad():
-           q_next = self._target_net(next_state).max(dim=1)[0].view(-1,1)
-           q_target = reward + gamma*q_next*(1-done)
+            next_qvalue = self._target_net(next_state)
+            max_next_qvalue = next_qvalue.max(dim=1)[0]  # 1*nA
+            max_next_qvalue = max_next_qvalue.reshape(-1 ,1)
+            q_target = reward + gamma * max_next_qvalue * (1-done)
+            
         criterion = nn.MSELoss()
         loss = criterion(q_value, q_target)
+
 
         # optimize
         self._optimizer.zero_grad()
@@ -160,6 +166,7 @@ def train(args, env, agent, writer):
         total_reward = 0
 
         state = env.reset()  # initial observation 初始狀態
+        epsilon = max(epsilon * args.eps_decay, args.eps_min)
 
         for t in itertools.count(start=1):  # itertools會一直做下去到break為止 (while(True))
             # select action
@@ -175,7 +182,6 @@ def train(args, env, agent, writer):
             else:
                 # 根據觀測值選一個action (forward propagation 得到q值來選)
                 action = agent.select_action(state, epsilon, action_space) 
-                epsilon = max(epsilon * args.eps_decay, args.eps_min)
             # execute action: take action 然後得到下一個state 和 take action之後的reward (要不要terminate)
             next_state, reward, done, _ = env.step(action)
             # store transition: 存現在這一步的state / 會得到的reward / take action 之後的state 跟要不要結束
@@ -214,11 +220,16 @@ def test(args, env, agent, writer):
         env.seed(seed)
         state = env.reset()
         ## TODO ##
-        # ...
-        #     if done:
-        #         writer.add_scalar('Test/Episode Reward', total_reward, n_episode)
-        #         ...
-        # raise NotImplementedError
+        for t in itertools.count(start=1):
+            action = agent.select_action(state, epsilon, action_space)
+            next_state, reward, done, _ = env.step(action)
+            state = next_state
+            total_reward += reward 
+            if done: 
+                print(f"Total Reward: {total_reward}")
+                rewards.append(total_reward)
+                break
+            
     print('Average Reward', np.mean(rewards))
     env.close()
 
@@ -231,7 +242,7 @@ def main():
     parser.add_argument('--logdir', default='log/dqn')
     # train
     parser.add_argument('--warmup', default=10000, type=int)
-    parser.add_argument('--episode', default=1200, type=int)
+    parser.add_argument('--episode', default=2400, type=int)
     parser.add_argument('--capacity', default=10000, type=int)
     parser.add_argument('--batch_size', default=128, type=int)
     parser.add_argument('--lr', default=.0005, type=float)
@@ -255,7 +266,7 @@ def main():
         train(args, env, agent, writer)
         agent.save(args.model)
     agent.load(args.model)
-    # test(args, env, agent, writer)
+    test(args, env, agent, writer)
 
 
 if __name__ == '__main__':
