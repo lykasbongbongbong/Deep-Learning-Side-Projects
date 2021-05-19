@@ -44,7 +44,7 @@ class Net(nn.Module):
             nn.ReLU(),
             nn.Linear(in_features=400, out_features=300),
             nn.ReLU(),
-            nn.Linear(in_features=300, out_features=action_dim)
+            nn.Linear(in_features=300, out_features=action_dim),
         )
 
     def forward(self, x):
