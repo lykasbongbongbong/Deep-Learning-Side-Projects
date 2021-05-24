@@ -51,7 +51,6 @@ class Net(nn.Module):
         ## TODO ##
         out = self.net(x)
         return out
-        # raise NotImplementedError
 
 
 class DQN:
@@ -227,6 +226,7 @@ def test(args, env, agent, writer):
             total_reward += reward 
             if done: 
                 print(f"Total Reward: {total_reward}")
+                writer.add_scalar('Test/Episode Reward', total_reward, n_episode)
                 rewards.append(total_reward)
                 break
             
@@ -242,7 +242,7 @@ def main():
     parser.add_argument('--logdir', default='log/dqn')
     # train
     parser.add_argument('--warmup', default=10000, type=int)
-    parser.add_argument('--episode', default=2400, type=int)
+    parser.add_argument('--episode', default=2000, type=int)
     parser.add_argument('--capacity', default=10000, type=int)
     parser.add_argument('--batch_size', default=128, type=int)
     parser.add_argument('--lr', default=.0005, type=float)
@@ -261,6 +261,7 @@ def main():
     ## main ##
     env = gym.make('LunarLander-v2')
     agent = DQN(args)
+    
     writer = SummaryWriter(args.logdir)
     if not args.test_only:
         train(args, env, agent, writer)
