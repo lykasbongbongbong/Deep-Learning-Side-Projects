@@ -115,15 +115,15 @@ class DDPG:
         '''based on the behavior (actor) network and exploration noise'''
         ## TODO ##
         with torch.no_grad():
+            current_state = torch.from_numpy(state)
             if noise:
                 # re = self._actor_net(torch.from_numpy(state).view(1,-1).to(self.device))+torch.from_numpy(self._action_noise.sample()).view(1,-1).to(self.device)
-                current_state = torch.from_numpy(state)
                 current_state = current_state.reshape(1, 8).to(self.device)
                 qvalue = self._actor_net(current_state)
                 noise_value = torch.from_numpy(self._action_noise.sample()).reshape(1, -1).to(self.device)
                 action = qvalue + noise_value
             else:
-                action = self._actor_net(torch.from_numpy(state).reshape(1,-1)).to(self.device)
+                action = self._actor_net(current_state.reshape(1,-1)).to(self.device)
             
         return action.cpu().numpy().squeeze()
         
