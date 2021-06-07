@@ -26,7 +26,7 @@ class ICLEVRLoader(data.Dataset):
             self.img_list.append(img_path)
             self.img_cond.append([self.objects[cond] for cond in img_conditions])
 
-        self.transformations=transforms.Compose([transforms.Resize((64,64)),transforms.ToTensor(),transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])
+        self.transform=transforms.Compose([transforms.Resize((64,64)),transforms.ToTensor(),transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])
 
         if self.mode == 'train':
             print("> Found %d images..." % (len(self.img_list)))
@@ -37,7 +37,7 @@ class ICLEVRLoader(data.Dataset):
 
     def __getitem__(self, index):
         img = Image.open(os.path.join(self.root_folder+"/images", self.img_list[index])).convert('RGB')
-        img = self.transformations(img)
+        img = self.transform(img)
         condition = self.get_condition_vec(self.img_cond[index])
         return img, condition 
     

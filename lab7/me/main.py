@@ -2,36 +2,40 @@ from torch.utils.data import DataLoader
 from dataset import ICLEVRLoader  
 from model import Generator, Discriminator 
 import os 
-import tqdm 
+from tqdm import tqdm as tqdm
 from util import get_test_conditions, save_image
 import torch 
 from evaluator import evaluation_model
+import torch.nn as nn
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def train(train_loader, NetG, NetD, root_folder, epochs, lr, z_dim, batch_size):
+def train(train_loader, NetG, NetD, root_folder, z_dim, epochs, lr, batch_size):
     Loss = nn.BCELoss()
     NetG_optimizer = torch.optim.Adam(NetG.parameters(), lr, betas=(0.5, 0.99))
     NetD_optimizer = torch.optim.Adam(NetD.parameters(), lr, betas=(0.5, 0.99))
-
+    eval_model = evaluation_model()
     best_acc = 0.
     best_model = {}
+
+
+    test_cond = get_test_conditions(os.path.join(root_folder, "test.json")).to(device)
+    test_latent = torch.randn(len(test_cond), z_dim).to(device)
     
     for epoch in tqdm(range(1, 1+epochs)):
         print_interval = 0
         total_Gloss = 0.
         total_DLoss = 0.
         for idx, (img, cond) in enumerate(train_loader):
-            # train G:D = 10:1
-
-            NetG.train()
+            # train D:G = 4:1
             
+            batch_size = len(img)
             real = torch.ones(batch_size).to(device)
             fake = torch.zeros(batch_size).to(device)
             cond = cond.to(device)
-            
+
             # train G
-            for i in range(10):
+            for i in range(4):
                 NetG_optimizer.zero_grad()
                 z = torch.randn(batch_size, z_dim).to(device)
                 imgG = NetG(z, cond)
@@ -39,8 +43,9 @@ def train(train_loader, NetG, NetD, root_folder, epochs, lr, z_dim, batch_size):
                 loss_g = Loss(pred, real)
                 loss_g.backward()
                 NetG_optimizer.step()
-            
+
             # train D 
+            NetG.train()
             NetD.train()
             NetD_optimizer.zero_grad()
 
@@ -51,13 +56,18 @@ def train(train_loader, NetG, NetD, root_folder, epochs, lr, z_dim, batch_size):
             #假照片 (latent sample)
             z = torch.randn(batch_size, z_dim).to(device)
             generated_img = NetG(z, cond)
-            pred = NetD(generated_img, cond)
+            pred = NetD(generated_img.detach(), cond)  #這邊要多加detach
             loss_f = Loss(pred, fake)
             loss_sum_discriminator = loss_r + loss_f
             loss_sum_discriminator.backward()
             NetD_optimizer.step()
 
-            if print_interval % 50 == 0:
+            
+           
+            
+            
+
+            if print_interval % 140 == 0:
                 print(f"Epoch {epoch}: {idx}|{len(train_loader)} G Loss: {loss_g.item():.4f} D Loss: {loss_sum_discriminator.item():.4f}")
             print_interval += 1
 
@@ -67,15 +77,14 @@ def train(train_loader, NetG, NetD, root_folder, epochs, lr, z_dim, batch_size):
         #test
         NetD.eval()
         NetG.eval()
-        test_cond = get_test_conditions(os.path.join(root_folder, "test.json")).to(device)
-        test_latent = torch.randn(len(test_cond), z_dim).to(device)
+       
         with torch.no_grad():
             generated_img = NetG(test_latent, test_cond)
-        acc = evaluation_model.eval(generated_img, test_cond)
+        acc = eval_model.eval(generated_img, test_cond)
         if acc > best_acc:
             best_acc = acc 
-            best_model.load_state_dict(NetG.state_dict())
-            path_name = "epoch"+epoch+"_acc"+best_acc+".weights"
+            best_model = NetG.state_dict()
+            path_name = "epoch"+str(epoch)+"_acc"+str(best_acc)+".weights"
             best_model_pth = os.path.join("weights", path_name)
             torch.save(best_model, best_model_pth)
         print(f"Testing Accuracy: {acc:.4f}")
@@ -87,7 +96,7 @@ def train(train_loader, NetG, NetD, root_folder, epochs, lr, z_dim, batch_size):
 def main():
     # param init 
     epochs= 200
-    lr = 0.001
+    lr = 0.0001
     # lr = 0.0002
     batch_size = 64
     z_dim = 100
