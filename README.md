@@ -1,5 +1,4 @@
-# DeepLearning-and-Practice-2021-Spring
-This repo is for all labs and projects from course Deep Learning and Practice held in NCTU 2021 Spring
+# Deep Learning Side Projects
 
 #### Lab 1: Backpropagation from scratch (without any framework such as PyTorch)
 #### Lab 2: Temporal Difference Learning (2048 Game)
